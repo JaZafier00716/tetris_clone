@@ -5,6 +5,8 @@
   - \`draw.c\`: This file is contains all drawing functions. 
   - \`window.c\`: This file contains functions for individual windows.
   - \`main.c\`: This is the main file of the project.
+  - \`movement.c\`: This file containts functions for object movement
+  - \`objects.c\`: This file contains all object definitions
 
 - **include/**: This folder contains header files. It includes \`header.h\` which is used for connection of source files.
 
