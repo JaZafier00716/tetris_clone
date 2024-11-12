@@ -7,7 +7,7 @@ project(Tetris)
 set(CMAKE_C_STANDARD 99)
 
 # Add the executable target
-add_executable(tetris src/main.c src/window.c src/draw.c src/colors.c src/objects.c src/movement.c)
+add_executable(tetris src/main.c src/window.c src/draw.c src/colors.c src/objects.c src/movement.c src/images.c)
 
 # Specify output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

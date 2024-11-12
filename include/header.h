@@ -100,6 +100,11 @@ typedef struct
 
 /* === Start Init User Functions === */
 
+/* === Start images.c Functions === */
+static void SetSDLIcon(SDL_Window* window);
+/* === End images.c Functions === */
+
+
 /* === Start movement.c Functions === */
 void solidify(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);
 int object_collision_detection(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);           // returns 1 on collision
