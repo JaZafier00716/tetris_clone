@@ -292,7 +292,7 @@ void rotate_CW(TObject *object)
   *object = temp_object;
 }
 
-int rotate_UP(TObject *object)
+void rotate_UP(TObject *object)
 {
   TObject temp_object = *object;
 
@@ -302,5 +302,4 @@ int rotate_UP(TObject *object)
   }
 
   *object = temp_object;
-  return 0;
 }

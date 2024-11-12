@@ -4,13 +4,15 @@
 /* === Start Include System Libraries === */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 /* === End Include System Libraries === */
 
-/* === Start Define Playing Field Size === */
+/* === Start Define Constants === */
 #define FIELD_WIDTH 12
 #define FIELD_HEIGHT 22
 #define SQUARE_SIZE 40
@@ -19,13 +21,7 @@
 #define TEXT_SIZE 64
 #define OBJECT_MATRICE_SIZE 4
 #define SETTINGS_ROW_SIZE 50
-/* === End Define Playing Field Size === */
-
-typedef struct
-{
-  SDL_Surface text_surface;
-  SDL_Texture *text_texture;
-}TText;
+/* === End Define Constants === */
 
 /* === Start Color Definitions === */
 typedef struct
@@ -57,8 +53,19 @@ enum direction
   LEFT
 };
 
+typedef struct
+{
+  SDL_Surface text_surface;
+  SDL_Texture *text_texture;
+}TText;
 typedef struct {
-  char move_left,move_right, move_down, move_hold, rotate_left, rotate_right;
+  char *title;
+  char *data;
+}TDataText;
+
+
+typedef struct {
+  TDataText move_left,move_right, move_down, move_hold, rotate_left, rotate_right;
 }TMovement;
 
 typedef struct
@@ -70,11 +77,6 @@ typedef struct
   int w;
   int h;
 } TObject;
-
-typedef struct {
-  char *title;
-  char *data;
-}TDataText;
 
 extern TObject empty_object;
 extern TObject object_I;
@@ -100,15 +102,15 @@ typedef struct
 
 /* === Start movement.c Functions === */
 void solidify(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);
-int object_collision_detection(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);          // returns 1 on collision
-int try_move_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_Point new_pos); // returns 0 on fail
-int try_rotate_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation);    // returns 0 on fail
-void transpose(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE]);
-void reverse(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE]);
-int remove_full_rows(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]); // returns number of removed rows
-int rotate_UP(TObject *object);
-void rotate_CC(TObject *object); // Rotates object Counter Clockwise
-void rotate_CW(TObject *object); // Rotates object Clockwise
+int object_collision_detection(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);           // returns 1 on collision
+int try_move_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_Point new_pos);  // returns 0 on fail
+int try_rotate_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation);     // returns 0 on fail
+void transpose(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE]);                              // Transposes object matrice
+void reverse(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE]);                                // Reverses object matrice 
+int remove_full_rows(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);                                     // returns number of removed rows
+void rotate_UP(TObject *object);                                                                    // Rotates object to face upwards
+void rotate_CC(TObject *object);                                                                    // Rotates object Counter Clockwise
+void rotate_CW(TObject *object);                                                                    // Rotates object Clockwise
 /* === End movement.c Functions === */
 
 /* === Start window.c Functions === */
@@ -116,7 +118,7 @@ int SDL_rand(int max); // returns random number  <0,max>
 void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height, SDL_FRect hold_box, SDL_FRect next_box, SDL_FRect matrice_box, SDL_FRect score_box);
 void matrice_init(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH]);
 int game_window(); // returns 1 on error
-int get_settings(TMovement *binds);
+int get_settings(TMovement *binds); // Returns 0 on error
 /* === End window.c Functions === */
 
 /* === Start draw.c Functions === */

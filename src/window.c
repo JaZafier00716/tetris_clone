@@ -168,20 +168,20 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         fprintf(stderr, "Failed to open config file", SDL_GetError());
     }
 
-    printf("down:%c\n", move.move_down);
-    printf("left:%c\n", move.move_left);
-    printf("right:%c\n", move.move_right);
-    printf("hold:%c\n", move.move_hold);
-    printf("rl:%c\n", move.rotate_left);
-    printf("rr:%c\n", move.rotate_right);
+    printf("down:%c\n", move.move_down.data);
+    printf("left:%c\n", move.move_left.data);
+    printf("right:%c\n", move.move_right.data);
+    printf("hold:%c\n", move.move_hold.data);
+    printf("rl:%c\n", move.rotate_left.data);
+    printf("rr:%c\n", move.rotate_right.data);
 
     // Matrice initialization
     matrice_init(game_field);
 
     // Object init
     object = object_array[random_object];
-    next = object_I;
-    // next = object_array[random_next];
+    // next = object_I;
+    next = object_array[random_next];
     hold = empty_object;
     // int held_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE];
     // memcpy(held_matrice, object.matrice, sizeof(object.matrice));
@@ -215,7 +215,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                 break;
             case SDL_KEYDOWN:
                 printf("%c\t%d\n", e.key.keysym.sym, e.key.keysym.sym);
-                if (e.key.keysym.sym == move.move_down)
+                if (e.key.keysym.sym == move.move_down.data[0])
                 {
 
                     printf("Down\n");
@@ -269,7 +269,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_left)
+                if (e.key.keysym.sym == move.move_left.data[0])
                 {
 
                     printf("Left\n");
@@ -284,7 +284,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_right)
+                if (e.key.keysym.sym == move.move_right.data[0])
                 {
 
                     printf("Right\n");
@@ -299,7 +299,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_hold)
+                if (e.key.keysym.sym == move.move_hold.data[0])
                 {
 
                     if (!held_current_object)
@@ -318,7 +318,8 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                         }
                         hold.pos.x = 0;
                         hold.pos.y = 0;
-                        hold.rotation = rotate_UP(&hold);
+                        rotate_UP(&hold);
+                        hold.rotation = UP;
                         next = object_array[random_next];
                         new_pos.x = rand_x_position;
                         new_pos.y = 1;
@@ -327,7 +328,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_left)
+                if ((char)e.key.keysym.sym == move.rotate_left.data[0])
                 {
 
                     printf("RotateL\n");
@@ -343,7 +344,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
                     continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_right)
+                if ((char)e.key.keysym.sym == move.rotate_right.data[0])
                 {
 
                     printf("RotateR\n");
@@ -456,63 +457,88 @@ int get_settings(TMovement *binds)
     FILE *f;
     char row[SETTINGS_ROW_SIZE];
     char *name, *bind;
+    char normalized_bind;
     f = fopen("../data/cfg/user.cfg", "r");
     if (!f)
     {
-        printf("Could not load user config");
-        f = fopen("../data/cfg/default.cfg", "r");
-        if (!f)
-        {
-            return 0;
-        }
+        return 0;
     }
     while (fgets(row, SETTINGS_ROW_SIZE, f))
     {
         name = strtok(row, ": ");
-        bind = strtok(NULL, " ");
-
-        if(bind[strlen(bind)-1] == '\n') {
-            bind[strlen(bind)-1] = '\0';
+        if(!name) {
+            continue;
         }
+        bind = strtok(NULL, ";");
+        if(!bind) {
+            continue;
+        }
+        strtok(NULL, "\n"); // Skip comments
+        printf("%s\n", bind);
+
+        normalized_bind = '\0';
+
+        for (int i = 0; i < (int)strlen(bind); i++)
+        {
+            if(bind[i] == ' ') {
+                continue;
+            }
+            normalized_bind = bind[i];
+            break;
+        }
+
+        if(normalized_bind == '\0') {
+            continue;
+        }
+
+        // if (bind[strlen(bind) - 1] == '\n')
+        // {
+        //     bind[strlen(bind) - 1] = '\0';
+        // }
         // printf("%s, %d\n", bind, bind[0]);
-
-        if (strcmp("move_left", name) == 0)
-        {
-            binds->move_left = bind[0];
+        if (strcmp("move_left", name) == 0) {
+            SDL_strlcpy(binds->move_left.title, name, SETTINGS_ROW_SIZE);
+            binds->move_left.data = malloc(2); // Allocate space for one character + null terminator
+            binds->move_left.data[0] = normalized_bind;
+            binds->move_left.data[1] = '\0';
             continue;
         }
-        if (strcmp("move_right", name) == 0)
-        {
-            binds->move_right = bind[0];
+        if (strcmp("move_right", name) == 0) {
+            SDL_strlcpy(binds->move_right.title, name, SETTINGS_ROW_SIZE);
+            binds->move_right.data = malloc(2);
+            binds->move_right.data[0] = normalized_bind;
+            binds->move_right.data[1] = '\0';
             continue;
         }
-        if (strcmp("move_down", name) == 0)
-        {
-            binds->move_down = bind[0];
+        if (strcmp("move_down", name) == 0) {
+            SDL_strlcpy(binds->move_down.title, name, SETTINGS_ROW_SIZE);
+            binds->move_down.data = malloc(2);
+            binds->move_down.data[0] = normalized_bind;
+            binds->move_down.data[1] = '\0';
             continue;
         }
-        if (strcmp("move_hold", name) == 0)
-        {
-            binds->move_hold = bind[0];
+        if (strcmp("move_hold", name) == 0) {
+            SDL_strlcpy(binds->move_hold.title, name, SETTINGS_ROW_SIZE);
+            binds->move_hold.data = malloc(2);
+            binds->move_hold.data[0] = normalized_bind;
+            binds->move_hold.data[1] = '\0';
             continue;
         }
-        if (strcmp("rotate_right", name) == 0)
-        {
-            binds->rotate_right = bind[0];
+        if (strcmp("rotate_right", name) == 0) {
+            SDL_strlcpy(binds->rotate_right.title, name, SETTINGS_ROW_SIZE);
+            binds->rotate_right.data = malloc(2);
+            binds->rotate_right.data[0] = normalized_bind;
+            binds->rotate_right.data[1] = '\0';
             continue;
         }
-        if (strcmp("rotate_left", name) == 0)
-        {
-            binds->rotate_left = bind[0];
+        if (strcmp("rotate_left", name) == 0) {
+            SDL_strlcpy(binds->rotate_left.title, name, SETTINGS_ROW_SIZE);
+            binds->rotate_left.data = malloc(2);
+            binds->rotate_left.data[0] = normalized_bind;
+            binds->rotate_left.data[1] = '\0';
             continue;
         }
     }
-    printf("\n\nBINDS:\n");
-    printf("down:%d\n", binds->move_down);
-    printf("left:%d\n", binds->move_left);
-    printf("right:%d\n", binds->move_right);
-    printf("hold:%d\n", binds->move_hold);
-    printf("rl:%d\n", binds->rotate_left);
-    printf("rr:%d\n\n\n", binds->rotate_right);
+    fclose(f);
     return 1;
 }

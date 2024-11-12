@@ -21,6 +21,7 @@ CMakeFiles/tetris.dir/src/colors.c.o: /home/jan/Documents/School/UPR/v2_tetris/s
   /usr/include/SDL2/SDL_haptic.h \
   /usr/include/SDL2/SDL_hidapi.h \
   /usr/include/SDL2/SDL_hints.h \
+  /usr/include/SDL2/SDL_image.h \
   /usr/include/SDL2/SDL_joystick.h \
   /usr/include/SDL2/SDL_keyboard.h \
   /usr/include/SDL2/SDL_keycode.h \
@@ -257,6 +258,7 @@ CMakeFiles/tetris.dir/src/draw.c.o: /home/jan/Documents/School/UPR/v2_tetris/src
   /usr/include/SDL2/SDL_haptic.h \
   /usr/include/SDL2/SDL_hidapi.h \
   /usr/include/SDL2/SDL_hints.h \
+  /usr/include/SDL2/SDL_image.h \
   /usr/include/SDL2/SDL_joystick.h \
   /usr/include/SDL2/SDL_keyboard.h \
   /usr/include/SDL2/SDL_keycode.h \
@@ -493,6 +495,7 @@ CMakeFiles/tetris.dir/src/main.c.o: /home/jan/Documents/School/UPR/v2_tetris/src
   /usr/include/SDL2/SDL_haptic.h \
   /usr/include/SDL2/SDL_hidapi.h \
   /usr/include/SDL2/SDL_hints.h \
+  /usr/include/SDL2/SDL_image.h \
   /usr/include/SDL2/SDL_joystick.h \
   /usr/include/SDL2/SDL_keyboard.h \
   /usr/include/SDL2/SDL_keycode.h \
@@ -729,6 +732,7 @@ CMakeFiles/tetris.dir/src/movement.c.o: /home/jan/Documents/School/UPR/v2_tetris
   /usr/include/SDL2/SDL_haptic.h \
   /usr/include/SDL2/SDL_hidapi.h \
   /usr/include/SDL2/SDL_hints.h \
+  /usr/include/SDL2/SDL_image.h \
   /usr/include/SDL2/SDL_joystick.h \
   /usr/include/SDL2/SDL_keyboard.h \
   /usr/include/SDL2/SDL_keycode.h \
@@ -965,6 +969,7 @@ CMakeFiles/tetris.dir/src/objects.c.o: /home/jan/Documents/School/UPR/v2_tetris/
   /usr/include/SDL2/SDL_haptic.h \
   /usr/include/SDL2/SDL_hidapi.h \
   /usr/include/SDL2/SDL_hints.h \
+  /usr/include/SDL2/SDL_image.h \
   /usr/include/SDL2/SDL_joystick.h \
   /usr/include/SDL2/SDL_keyboard.h \
   /usr/include/SDL2/SDL_keycode.h \
@@ -1201,6 +1206,7 @@ CMakeFiles/tetris.dir/src/window.c.o: /home/jan/Documents/School/UPR/v2_tetris/s
   /usr/include/SDL2/SDL_haptic.h \
   /usr/include/SDL2/SDL_hidapi.h \
   /usr/include/SDL2/SDL_hints.h \
+  /usr/include/SDL2/SDL_image.h \
   /usr/include/SDL2/SDL_joystick.h \
   /usr/include/SDL2/SDL_keyboard.h \
   /usr/include/SDL2/SDL_keycode.h \
@@ -1568,7 +1574,7 @@ CMakeFiles/tetris.dir/src/window.c.o: /home/jan/Documents/School/UPR/v2_tetris/s
 
 /usr/include/sys/types.h:
 
-/usr/include/alloca.h:
+/usr/include/sys/select.h:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include/ia32intrin.h:
 
@@ -1626,6 +1632,12 @@ CMakeFiles/tetris.dir/src/window.c.o: /home/jan/Documents/School/UPR/v2_tetris/s
 
 /usr/include/SDL2/SDL_mutex.h:
 
+/usr/include/SDL2/SDL_thread.h:
+
+/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include/avx512fp16vlintrin.h:
+
+/usr/include/SDL2/SDL_metal.h:
+
 /usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include/avx512fp16intrin.h:
 
 /usr/include/SDL2/SDL_events.h:
@@ -1640,17 +1652,15 @@ CMakeFiles/tetris.dir/src/window.c.o: /home/jan/Documents/School/UPR/v2_tetris/s
 
 /usr/include/bits/fp-fast.h:
 
+/usr/include/alloca.h:
+
+/usr/include/SDL2/SDL_image.h:
+
 /usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include/avxneconvertintrin.h:
 
 /usr/include/SDL2/SDL_main.h:
 
 /usr/include/SDL2/SDL_endian.h:
-
-/usr/include/SDL2/SDL_thread.h:
-
-/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include/avx512fp16vlintrin.h:
-
-/usr/include/SDL2/SDL_metal.h:
 
 /usr/include/SDL2/SDL_misc.h:
 
@@ -1895,5 +1905,3 @@ CMakeFiles/tetris.dir/src/window.c.o: /home/jan/Documents/School/UPR/v2_tetris/s
 /usr/include/stdlib.h:
 
 /usr/include/sys/cdefs.h:
-
-/usr/include/sys/select.h:

@@ -18,7 +18,8 @@ include_directories(include)
 # Link any libraries if needed (e.g., SDL2)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
-target_link_libraries(tetris SDL2::SDL2 SDL2_ttf::SDL2_ttf)
+find_package(SDL2_image REQUIRED)
+target_link_libraries(tetris SDL2::SDL2 SDL2_ttf::SDL2_ttf SDL2_image)
 
 set(CMAKE_BUILD_TYPE Debug)           # Set the build type to Debug
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")     # Add debugging symbols and disable optimizations
