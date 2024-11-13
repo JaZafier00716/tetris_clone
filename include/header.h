@@ -4,8 +4,8 @@
 /* === Start Include System Libraries === */
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-// #include <SDL2/SDL_surface.h>
-// #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_surface.h>
+#include <SDL2/SDL_image.h>
 #include <stdbool.h>
 #include <time.h>
 #include <stdio.h>
@@ -24,6 +24,7 @@
 #define WORD_SIZE 20
 /* === End Define Constants === */
 
+/* === Start Define Common Structures === */
 typedef struct
 {
   SDL_Color primary;
@@ -34,13 +35,12 @@ typedef struct
 {
   SDL_Surface text_surface;
   SDL_Texture *text_texture;
-}TText;
+} TText;
 
-
-/* === Start Init User Functions === */
-
-
-
-/* === End User Functions === */
+typedef struct {
+  char *title;
+  char *data;
+}TDataText;
+/* === End Define Common Structures === */
 
 #endif

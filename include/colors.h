@@ -3,7 +3,6 @@
 #include "header.h"
 
 /* === Start Color Definitions === */
-
 extern TColor light;
 extern TColor dark;
 extern TColor red;

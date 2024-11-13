@@ -13,11 +13,6 @@ enum direction
 };
 
 typedef struct {
-  char *title;
-  char *data;
-}TDataText;
-
-typedef struct {
   char name[WORD_SIZE];
   char bind;
 }TBinds;
@@ -25,7 +20,6 @@ typedef struct {
 typedef struct {
   TBinds move_left,move_right, move_down, move_hold, rotate_left, rotate_right;
 }TMovement;
-
 
 typedef struct
 {
@@ -45,8 +39,6 @@ extern TObject object_O;
 extern TObject object_S;
 extern TObject object_T;
 extern TObject object_Z;
-
-
 /* === End Object Definitions === */
 
 
