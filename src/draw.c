@@ -1,4 +1,4 @@
-#include "header.h"
+#include "draw.h"
 
 void draw_background(SDL_Renderer *renderer, SDL_Color color)
 {
@@ -120,7 +120,7 @@ void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color)
         &square1_2);
 }
 
-void draw_playing_field(SDL_Renderer *renderer, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_FPoint pos)
+void draw_playing_field(SDL_Renderer *renderer, int matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_FPoint pos)
 {
     SDL_FPoint square_pos;
     for (int i = 0; i < FIELD_HEIGHT; i++)
@@ -129,9 +129,17 @@ void draw_playing_field(SDL_Renderer *renderer, TNode matrice[FIELD_HEIGHT][FIEL
         for (int j = 0; j < FIELD_WIDTH; j++)
         {
             square_pos.x = j * (SQUARE_SIZE + SPACING_WIDTH) + pos.x;
-            if (matrice[i][j].exists)
+            if (matrice[i][j])
             {
-                draw_rectangle(renderer, square_pos, matrice[i][j].color);
+                if (j == 0 || j == FIELD_WIDTH - 1 || i == 0 || i == FIELD_HEIGHT - 1)
+                {
+
+                    draw_rectangle(renderer, square_pos, dark);
+                }
+                else
+                {
+                    draw_rectangle(renderer, square_pos, light);
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 CMakeFiles/tetris.dir/src/colors.c.o: \
  /home/jan/Documents/School/UPR/v2_tetris/src/colors.c \
  /usr/include/stdc-predef.h \
+ /home/jan/Documents/School/UPR/v2_tetris/include/colors.h \
  /home/jan/Documents/School/UPR/v2_tetris/include/header.h \
  /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
  /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_config.h \
@@ -173,7 +174,7 @@ CMakeFiles/tetris.dir/src/colors.c.o: \
  /usr/include/SDL2/SDL_system.h /usr/include/SDL2/SDL_timer.h \
  /usr/include/SDL2/SDL_version.h /usr/include/SDL2/SDL_locale.h \
  /usr/include/SDL2/SDL_misc.h /usr/include/SDL2/SDL_ttf.h \
- /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_image.h \
+ /usr/include/SDL2/SDL.h \
  /usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include/stdbool.h \
  /usr/include/time.h /usr/include/bits/time.h \
  /usr/include/bits/types/struct_tm.h \
