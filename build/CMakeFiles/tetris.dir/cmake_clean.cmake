@@ -1,8 +1,11 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/tetris.dir/link.d"
   "CMakeFiles/tetris.dir/src/colors.c.o"
   "CMakeFiles/tetris.dir/src/colors.c.o.d"
   "CMakeFiles/tetris.dir/src/draw.c.o"
   "CMakeFiles/tetris.dir/src/draw.c.o.d"
+  "CMakeFiles/tetris.dir/src/images.c.o"
+  "CMakeFiles/tetris.dir/src/images.c.o.d"
   "CMakeFiles/tetris.dir/src/main.c.o"
   "CMakeFiles/tetris.dir/src/main.c.o.d"
   "CMakeFiles/tetris.dir/src/movement.c.o"

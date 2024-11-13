@@ -1,0 +1,8 @@
+# ninja log v6
+2	684	1731504776385377163	CMakeFiles/tetris.dir/src/movement.c.o	3da1ffdcd2c4c2bd
+757	799	1731504777138705549	tetris	2d6092d81c7d32e7
+2	661	1731504776385377163	CMakeFiles/tetris.dir/src/objects.c.o	192c817f30059e64
+1	729	1731504776385377163	CMakeFiles/tetris.dir/src/main.c.o	1a70876f2c8a4a04
+1	697	1731504776385377163	CMakeFiles/tetris.dir/src/colors.c.o	e710c35260328e8d
+1	757	1731504776385377163	CMakeFiles/tetris.dir/src/draw.c.o	7eb17da7e1b3c878
+1	747	1731504776385377163	CMakeFiles/tetris.dir/src/window.c.o	88e8a3790d0a2d44

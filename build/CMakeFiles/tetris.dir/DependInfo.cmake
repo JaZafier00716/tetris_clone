@@ -10,10 +10,12 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/jan/Documents/School/UPR/v2_tetris/src/colors.c" "CMakeFiles/tetris.dir/src/colors.c.o" "gcc" "CMakeFiles/tetris.dir/src/colors.c.o.d"
   "/home/jan/Documents/School/UPR/v2_tetris/src/draw.c" "CMakeFiles/tetris.dir/src/draw.c.o" "gcc" "CMakeFiles/tetris.dir/src/draw.c.o.d"
+  "/home/jan/Documents/School/UPR/v2_tetris/src/images.c" "CMakeFiles/tetris.dir/src/images.c.o" "gcc" "CMakeFiles/tetris.dir/src/images.c.o.d"
   "/home/jan/Documents/School/UPR/v2_tetris/src/main.c" "CMakeFiles/tetris.dir/src/main.c.o" "gcc" "CMakeFiles/tetris.dir/src/main.c.o.d"
   "/home/jan/Documents/School/UPR/v2_tetris/src/movement.c" "CMakeFiles/tetris.dir/src/movement.c.o" "gcc" "CMakeFiles/tetris.dir/src/movement.c.o.d"
   "/home/jan/Documents/School/UPR/v2_tetris/src/objects.c" "CMakeFiles/tetris.dir/src/objects.c.o" "gcc" "CMakeFiles/tetris.dir/src/objects.c.o.d"
   "/home/jan/Documents/School/UPR/v2_tetris/src/window.c" "CMakeFiles/tetris.dir/src/window.c.o" "gcc" "CMakeFiles/tetris.dir/src/window.c.o.d"
+  "" "tetris" "gcc" "CMakeFiles/tetris.dir/link.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
