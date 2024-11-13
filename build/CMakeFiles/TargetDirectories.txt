@@ -1,3 +1,0 @@
-/home/jan/Documents/School/UPR/v2_tetris/build/CMakeFiles/tetris.dir
-/home/jan/Documents/School/UPR/v2_tetris/build/CMakeFiles/edit_cache.dir
-/home/jan/Documents/School/UPR/v2_tetris/build/CMakeFiles/rebuild_cache.dir
