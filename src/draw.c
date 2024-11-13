@@ -166,70 +166,6 @@ void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, TObject obje
     }
 }
 
-// void draw_color_palette(SDL_Renderer *renderer)
-// {
-//     int k = 0, j = 1, i = 1;
-//     TColor color[] = {
-//         light,
-//         dark,
-//         red,
-//         yellow,
-//         green,
-//         cyan,
-//         blue,
-//         purple,
-//         orange};
-
-//     while (k < 27)
-//     {
-//         if (k < 9)
-//         {
-//             draw_rectangle(renderer, j, i, color[k]);
-//         }
-//         else
-//         {
-//             if (k < 18)
-//             {
-//                 SDL_SetRenderDrawColor( // light red
-//                     renderer,
-//                     color[k - 9].primary.r,
-//                     color[k - 9].primary.g,
-//                     color[k - 9].primary.b,
-//                     color[k - 9].primary.a);
-//             }
-//             else
-//             {
-//                 SDL_SetRenderDrawColor( // light red
-//                     renderer,
-//                     color[k - 18].secondary.r,
-//                     color[k - 18].secondary.g,
-//                     color[k - 18].secondary.b,
-//                     color[k - 18].secondary.a);
-//             }
-//             const SDL_Rect square1_2 = {SQUARE_SIZE * j + SPACING_WIDTH * j, SQUARE_SIZE * i + SPACING_WIDTH * i, SQUARE_SIZE - SHADE_WIDTH, SQUARE_SIZE - SHADE_WIDTH};
-
-//             SDL_RenderFillRect(
-//                 renderer,
-//                 &square1_2);
-//         }
-//         j++;
-//         k++;
-//         if (k == 9 || k == 18)
-//         {
-//             i++;
-//             j = 1;
-//         }
-//         else
-//         {
-//             if (j > FIELD_WIDTH)
-//             {
-//                 j = 1;
-//                 i++;
-//             }
-//         }
-//     }
-// }
-
 void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_font, TDataText text[], int text_num, SDL_FRect rect)
 {
     SDL_FRect outer = {
@@ -327,4 +263,19 @@ void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_
         SDL_DestroyTexture(data_texture);
         SDL_FreeSurface(data_surface);
     }
+}
+
+void draw_icon(SDL_Renderer *renderer, SDL_FRect rect, char *file_path)
+{
+    SDL_Surface *surface = IMG_Load(file_path);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (!texture)
+    {
+        fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", IMG_GetError());
+        return;
+    }
+
+    SDL_RenderCopyF(renderer, texture, NULL, &rect);
+
+    SDL_FreeSurface(surface);
 }

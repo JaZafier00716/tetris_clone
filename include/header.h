@@ -22,6 +22,7 @@
 #define OBJECT_MATRICE_SIZE 4
 #define SETTINGS_ROW_SIZE 50
 #define WORD_SIZE 20
+#define ICON_SIZE 48
 /* === End Define Constants === */
 
 /* === Start Define Common Structures === */

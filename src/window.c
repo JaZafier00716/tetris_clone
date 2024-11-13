@@ -19,12 +19,23 @@ int game_window()
         .w = SQUARE_SIZE * 4 + SPACING_WIDTH * 7, // ||___||___||___||___||
         .x = matrice_box.w + matrice_box.x,
         .y = 5};
-    SDL_FRect score_box = {
+    const SDL_FRect score_box = {
         .h = (TEXT_SIZE + TEXT_SIZE / 2),
         .w = hold_box.w,
         .x = hold_box.x,
         .y = matrice_box.h + matrice_box.y};
-
+    const SDL_FRect cog_img_box = {
+        .h = ICON_SIZE,
+        .w = ICON_SIZE,
+        .x = next_box.x + next_box.w - ICON_SIZE,
+        .y = matrice_box.h + matrice_box.y - ICON_SIZE
+    };
+    const SDL_FRect sound_img_box = {
+        .h = ICON_SIZE,
+        .w = ICON_SIZE,
+        .x = cog_img_box.x - ICON_SIZE - SPACING_WIDTH,
+        .y = cog_img_box.y,
+    };
     // SDL Initialization
     if (SDL_Init(SDL_INIT_VIDEO))
     { // If Initialization Failed, return 1
@@ -35,6 +46,11 @@ int game_window()
     if (TTF_Init())
     {
         fprintf(stderr, "TTF_Init Error: %s\n", TTF_GetError());
+        return 1;
+    }
+
+    if(IMG_Init(IMG_INIT_PNG) == 0) {
+        fprintf(stderr, "IMG_Init Error: %s\n", IMG_GetError());
         return 1;
     }
 
@@ -74,7 +90,7 @@ int game_window()
         return 1;
     }
 
-    game_infinite_loop(renderer, window_width, window_height, hold_box, next_box, matrice_box, score_box);
+    game_infinite_loop(renderer, window_width, window_height, hold_box, next_box, matrice_box, score_box, cog_img_box, sound_img_box);
 
     TTF_Quit();
     SDL_DestroyRenderer(renderer);
@@ -89,7 +105,7 @@ int SDL_rand(int max)
     return rand() % (max + 1);
 }
 
-void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height, SDL_FRect hold_box, SDL_FRect next_box, SDL_FRect matrice_box, SDL_FRect score_box)
+void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height, SDL_FRect hold_box, SDL_FRect next_box, SDL_FRect matrice_box, SDL_FRect score_box, SDL_FRect cog_img_box, SDL_FRect sound_img_box )
 {
     bool running = true;
     SDL_Event e;
@@ -122,6 +138,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     data_texts[1].title = "LINES";
     data_texts[1].data = "0";
 
+    // An array Cntaining all objects
     TObject object_array[7] = {
         object_I,
         object_J,
@@ -151,31 +168,23 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         move_right = 'd',
         move_down = 's',
         move_hold = 'c',
-        rotate_right = 1073741903,
-        rotate_left = 1073741904
+        rotate_right = 'O',
+        rotate_left = 'P'
     };
 
-    TMovement move;
-    // TMovement move = {
-    //     .move_down = move_down,
-    //     .move_left = move_left,
-    //     .move_down = move_down,
-    //     .move_hold = move_hold,
-    //     .rotate_right = rotate_right,
-    //     .rotate_left = rotate_left};
+    // TMovement move;
+    TMovement move = {
+        .move_down = move_down,
+        .move_left = move_left,
+        .move_down = move_down,
+        .move_hold = move_hold,
+        .rotate_right = rotate_right,
+        .rotate_left = rotate_left};
 
     if (!get_settings(&move))
     {
         fprintf(stderr, "Failed to open config file", SDL_GetError());
     }
-
-    printf("done\n");
-    printf("down:%c\n", move.move_down.bind);
-    printf("left:%c\n", move.move_left.bind);
-    printf("right:%c\n", move.move_right.bind);
-    printf("hold:%c\n", move.move_hold.bind);
-    printf("rl:%c\n", move.rotate_left.bind);
-    printf("rr:%c\n", move.rotate_right.bind);
 
     // Matrice initialization
     matrice_init(game_field);
@@ -428,6 +437,8 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         draw_playing_field(renderer, game_field, game_field_pos);
         draw_object_matrice(renderer, game_field_pos, object);
         draw_object_box(renderer, light.secondary, next_box, next, "next", title_font); // Next object box
+        draw_icon(renderer, cog_img_box, "../public/icons/cog.png");
+        draw_icon(renderer, sound_img_box, "../public/icons/volume_on.png");
         SDL_RenderPresent(renderer);
     }
     TTF_CloseFont(title_font);
@@ -456,7 +467,7 @@ int get_settings(TMovement *binds)
 {
     FILE *f;
     char row[SETTINGS_ROW_SIZE];
-    char *name, *bind, *comment;
+    char *name, *bind;
     char normalized_bind;
     memset(row, '\0',SETTINGS_ROW_SIZE);
     f = fopen("../data/cfg/user.cfg", "r");
@@ -466,19 +477,6 @@ int get_settings(TMovement *binds)
     }
     while (fgets(row, SETTINGS_ROW_SIZE, f))
     {
-        for (int i = 0; i < SETTINGS_ROW_SIZE; i++)
-        {
-            if(row[i] == '\n') {
-                printf("/n");
-                continue;
-            }
-            if(row[i] == '\0') {
-                printf("/0");
-                continue;
-            }
-            printf("%c", row[i]);
-        }
-        
         name = strtok(row, ":");
         if (!name)
         {
@@ -489,11 +487,8 @@ int get_settings(TMovement *binds)
         {
             continue;
         }
-        comment = strtok(NULL, "\n"); // Skip comments
-        if(!comment) {
-            printf("no comment");
-        }
-        printf("%s\t%s\t%s",name, bind, comment);
+        strtok(NULL, "\n"); // Skip comments
+        printf("%s\t%s",name, bind);
 
         normalized_bind = '\0';
 
