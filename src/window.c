@@ -1,4 +1,4 @@
-#include "header.h"
+#include "window.h"
 
 int game_window()
 {
@@ -93,7 +93,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 {
     bool running = true;
     SDL_Event e;
-    TNode game_field[FIELD_HEIGHT][FIELD_WIDTH];
+    int game_field[FIELD_HEIGHT][FIELD_WIDTH];
     SDL_FPoint game_field_pos = {
         .x = matrice_box.x,
         .y = matrice_box.y,
@@ -115,7 +115,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     }
 
     // Score and lines text
-    char *data_str;
+    char data_str[WORD_SIZE];
     TDataText data_texts[2];
     data_texts[0].title = "SCORE";
     data_texts[0].data = "0";
@@ -154,6 +154,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         rotate_right = 1073741903,
         rotate_left = 1073741904
     };
+
     TMovement move;
     // TMovement move = {
     //     .move_down = move_down,
@@ -168,20 +169,21 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         fprintf(stderr, "Failed to open config file", SDL_GetError());
     }
 
-    printf("down:%c\n", move.move_down);
-    printf("left:%c\n", move.move_left);
-    printf("right:%c\n", move.move_right);
-    printf("hold:%c\n", move.move_hold);
-    printf("rl:%c\n", move.rotate_left);
-    printf("rr:%c\n", move.rotate_right);
+    printf("done\n");
+    printf("down:%c\n", move.move_down.bind);
+    printf("left:%c\n", move.move_left.bind);
+    printf("right:%c\n", move.move_right.bind);
+    printf("hold:%c\n", move.move_hold.bind);
+    printf("rl:%c\n", move.rotate_left.bind);
+    printf("rr:%c\n", move.rotate_right.bind);
 
     // Matrice initialization
     matrice_init(game_field);
 
     // Object init
     object = object_array[random_object];
-    next = object_I;
-    // next = object_array[random_next];
+    // next = object_I;
+    next = object_array[random_next];
     hold = empty_object;
     // int held_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE];
     // memcpy(held_matrice, object.matrice, sizeof(object.matrice));
@@ -215,7 +217,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                 break;
             case SDL_KEYDOWN:
                 printf("%c\t%d\n", e.key.keysym.sym, e.key.keysym.sym);
-                if (e.key.keysym.sym == move.move_down)
+                if (e.key.keysym.sym == move.move_down.bind)
                 {
 
                     printf("Down\n");
@@ -269,7 +271,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_left)
+                if (e.key.keysym.sym == move.move_left.bind)
                 {
 
                     printf("Left\n");
@@ -284,7 +286,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_right)
+                if (e.key.keysym.sym == move.move_right.bind)
                 {
 
                     printf("Right\n");
@@ -299,7 +301,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_hold)
+                if (e.key.keysym.sym == move.move_hold.bind)
                 {
 
                     if (!held_current_object)
@@ -318,7 +320,8 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                         }
                         hold.pos.x = 0;
                         hold.pos.y = 0;
-                        hold.rotation = rotate_UP(&hold);
+                        rotate_UP(&hold);
+                        hold.rotation = UP;
                         next = object_array[random_next];
                         new_pos.x = rand_x_position;
                         new_pos.y = 1;
@@ -327,7 +330,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_left)
+                if ((char)e.key.keysym.sym == move.rotate_left.bind)
                 {
 
                     printf("RotateL\n");
@@ -343,7 +346,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
                     continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_right)
+                if ((char)e.key.keysym.sym == move.rotate_right.bind)
                 {
 
                     printf("RotateR\n");
@@ -431,22 +434,20 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     TTF_CloseFont(data_font);
 };
 
-void matrice_init(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
+void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
     for (int i = 0; i < FIELD_HEIGHT; i++)
     {
         for (int j = 0; j < FIELD_WIDTH; j++)
         {
             if (i == 0 || i == FIELD_HEIGHT - 1 || j == 0 || j == FIELD_WIDTH - 1)
-            { // Top and bottom || left || right borders
-                matrice[i][j].exists = true;
+            {
+                matrice[i][j] = 1;
             }
             else
             {
-                matrice[i][j].exists = false;
+                matrice[i][j] = 0;
             }
-            matrice[i][j].color = dark;
-            matrice[i][j].moving = false;
         }
     }
 }
@@ -455,64 +456,100 @@ int get_settings(TMovement *binds)
 {
     FILE *f;
     char row[SETTINGS_ROW_SIZE];
-    char *name, *bind;
+    char *name, *bind, *comment;
+    char normalized_bind;
+    memset(row, '\0',SETTINGS_ROW_SIZE);
     f = fopen("../data/cfg/user.cfg", "r");
     if (!f)
     {
-        printf("Could not load user config");
-        f = fopen("../data/cfg/default.cfg", "r");
-        if (!f)
-        {
-            return 0;
-        }
+        return 0;
     }
     while (fgets(row, SETTINGS_ROW_SIZE, f))
     {
-        name = strtok(row, ": ");
-        bind = strtok(NULL, " ");
-
-        if(bind[strlen(bind)-1] == '\n') {
-            bind[strlen(bind)-1] = '\0';
+        for (int i = 0; i < SETTINGS_ROW_SIZE; i++)
+        {
+            if(row[i] == '\n') {
+                printf("/n");
+                continue;
+            }
+            if(row[i] == '\0') {
+                printf("/0");
+                continue;
+            }
+            printf("%c", row[i]);
         }
-        // printf("%s, %d\n", bind, bind[0]);
+        
+        name = strtok(row, ":");
+        if (!name)
+        {
+            continue;
+        }
+        bind = strtok(NULL, ";");
+        if (!bind)
+        {
+            continue;
+        }
+        comment = strtok(NULL, "\n"); // Skip comments
+        if(!comment) {
+            printf("no comment");
+        }
+        printf("%s\t%s\t%s",name, bind, comment);
 
+        normalized_bind = '\0';
+
+        for (int i = 0; i < (int)strlen(bind); i++)
+        {
+            if (bind[i] == ' ')
+            {
+                continue;
+            }
+            normalized_bind = bind[i];
+            break;
+        }
+
+        if (normalized_bind == '\0')
+        {
+            continue;
+        }
         if (strcmp("move_left", name) == 0)
         {
-            binds->move_left = bind[0];
+            SDL_strlcpy(binds->move_left.name, name, sizeof(binds->move_left.name));
+            binds->move_left.bind = normalized_bind;
             continue;
         }
         if (strcmp("move_right", name) == 0)
         {
-            binds->move_right = bind[0];
+            SDL_strlcpy(binds->move_right.name, name, sizeof(binds->move_left.name));
+            binds->move_right.bind = normalized_bind;
             continue;
         }
         if (strcmp("move_down", name) == 0)
         {
-            binds->move_down = bind[0];
+            SDL_strlcpy(binds->move_down.name, name, sizeof(binds->move_left.name));
+            binds->move_down.bind = normalized_bind;
             continue;
         }
         if (strcmp("move_hold", name) == 0)
         {
-            binds->move_hold = bind[0];
+            SDL_strlcpy(binds->move_hold.name, name, sizeof(binds->move_left.name));
+            binds->move_hold.bind = normalized_bind;
             continue;
         }
         if (strcmp("rotate_right", name) == 0)
         {
-            binds->rotate_right = bind[0];
+            SDL_strlcpy(binds->rotate_right.name, name, sizeof(binds->move_left.name));
+            binds->rotate_right.bind = normalized_bind;
             continue;
         }
         if (strcmp("rotate_left", name) == 0)
         {
-            binds->rotate_left = bind[0];
+            printf("true");
+            SDL_strlcpy(binds->rotate_left.name, name, sizeof(binds->move_left.name));
+            binds->rotate_left.bind = normalized_bind;
             continue;
         }
     }
-    printf("\n\nBINDS:\n");
-    printf("down:%d\n", binds->move_down);
-    printf("left:%d\n", binds->move_left);
-    printf("right:%d\n", binds->move_right);
-    printf("hold:%d\n", binds->move_hold);
-    printf("rl:%d\n", binds->rotate_left);
-    printf("rr:%d\n\n\n", binds->rotate_right);
+
+    fclose(f);
     return 1;
 }

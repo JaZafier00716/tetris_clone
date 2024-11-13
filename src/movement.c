@@ -1,4 +1,4 @@
-#include "header.h"
+#include "movement.h"
 
 void transpose(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE])
 {
@@ -26,7 +26,7 @@ void reverse(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE])
   memcpy(matrice, new_matrice, sizeof(new_matrice));
 }
 
-int object_collision_detection(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
+int object_collision_detection(TObject object, int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
   for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
   {
@@ -36,7 +36,7 @@ int object_collision_detection(TObject object, TNode matrice[FIELD_HEIGHT][FIELD
       {
         continue;
       }
-      if (object.matrice[i][j] == 1 && matrice[i + object.pos.y][j + object.pos.x].exists) // +1 because of borders
+      if (object.matrice[i][j] == 1 && matrice[i + object.pos.y][j + object.pos.x]) // +1 because of borders
       {
         //   printf("i:%d + y:%d : j:%d + x:%d\n", i, object.pos.y, j, object.pos.x);
         return 1;
@@ -46,7 +46,7 @@ int object_collision_detection(TObject object, TNode matrice[FIELD_HEIGHT][FIELD
   return 0;
 }
 
-int try_move_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_Point new_pos)
+int try_move_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_Point new_pos)
 {
   TObject temp_object = *object;
   temp_object.pos = new_pos;
@@ -59,10 +59,10 @@ int try_move_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], S
   return 0;
 }
 
-int try_rotate_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation)
+int try_rotate_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation)
 {
   TObject temp_object = *object;
-  int moved_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE] = {0};
+  // int moved_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE] = {0};
   int is_empty = true;
   int num_empty = 0;
 
@@ -104,9 +104,9 @@ int try_rotate_object(TObject *object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH],
   return 0; // Rotation failed, revert
 }
 
-void solidify(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
+void solidify(TObject object, int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
-  TNode new_matrice[FIELD_HEIGHT][FIELD_WIDTH];
+  int new_matrice[FIELD_HEIGHT][FIELD_WIDTH];
 
   memcpy(new_matrice, matrice, sizeof(new_matrice));
 
@@ -120,9 +120,7 @@ void solidify(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
       }
       if (object.matrice[i][j] == 1)
       {
-        new_matrice[object.pos.y + i][object.pos.x + j].exists = true;
-        new_matrice[object.pos.y + i][object.pos.x + j].moving = false;
-        new_matrice[object.pos.y + i][object.pos.x + j].color = light;
+        new_matrice[object.pos.y + i][object.pos.x + j] = 1;
       }
     }
   }
@@ -130,9 +128,9 @@ void solidify(TObject object, TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
   memcpy(matrice, new_matrice, sizeof(new_matrice));
 }
 
-int remove_full_rows(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
+int remove_full_rows(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
-  TNode new_matrice[FIELD_HEIGHT][FIELD_WIDTH];
+  int new_matrice[FIELD_HEIGHT][FIELD_WIDTH];
   memcpy(new_matrice, matrice, sizeof(new_matrice));
   bool full_row;
   int num_full = 0;
@@ -142,7 +140,7 @@ int remove_full_rows(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
     full_row = true;
     for (int j = 1; j < FIELD_WIDTH - 1; j++)
     {
-      if (!new_matrice[i][j].exists) // +1 because of borders
+      if (!new_matrice[i][j]) // +1 because of borders
       {
         full_row = false;
         break;
@@ -156,8 +154,7 @@ int remove_full_rows(TNode matrice[FIELD_HEIGHT][FIELD_WIDTH])
         {
           for (int j = 1; j < FIELD_WIDTH - 1; j++)
           {
-            new_matrice[k][j].exists = false;
-            new_matrice[k][j].moving = false;
+            new_matrice[k][j]= 0;
           }
         }
         else
@@ -292,7 +289,7 @@ void rotate_CW(TObject *object)
   *object = temp_object;
 }
 
-int rotate_UP(TObject *object)
+void rotate_UP(TObject *object)
 {
   TObject temp_object = *object;
 
@@ -302,5 +299,4 @@ int rotate_UP(TObject *object)
   }
 
   *object = temp_object;
-  return 0;
 }
