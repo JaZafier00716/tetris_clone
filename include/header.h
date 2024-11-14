@@ -24,7 +24,20 @@
 #define SETTINGS_ROW_SIZE 50
 #define WORD_SIZE 20
 #define ICON_SIZE 48
+#define BINDS_NUM 6
 /* === End Define Constants === */
+
+/* === Start Define icon paths === */
+#define ARROW_DOWN "../public/icons/arrow_down.png"
+#define ARROW_LEFT "../public/icons/arrow_left.png"
+#define ARROW_RIGHT "../public/icons/arrow_right.png"
+#define COG "../public/icons/cog.png"
+#define HOLD "../public/icons/hold.png"
+#define ROTATE_CC "../public/icons/rotate_cc.png"
+#define ROTATE_CW "../public/icons/rotate_cw.png"
+#define VOLUME_MUTE "../public/icons/volume_mute.png"
+#define VOLUME_ON "../public/icons/volume_on.png"
+/* === End Define icon paths === */
 
 /* === Start Define Common Structures === */
 typedef struct

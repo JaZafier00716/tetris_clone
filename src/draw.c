@@ -22,7 +22,7 @@ void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect bo
 
     const SDL_FRect text_rect = {
         .x = inner.x,
-        .y = inner.y+SPACING_WIDTH,
+        .y = inner.y + SPACING_WIDTH,
         .w = inner.w,
         .h = TITLE_SIZE * 0.8125};
 
@@ -47,7 +47,7 @@ void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect bo
 
     for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
     {
-        pos.y = i * (SQUARE_SIZE + SPACING_WIDTH) + 0.5 * ((inner.h + inner.y + 3 * SPACING_WIDTH)) - 0.5 * text_rect.h;
+        pos.y = i * (SQUARE_SIZE + SPACING_WIDTH) + 0.5 * ((inner.h + inner.y - object.h));
         if (object.h == 1)
         {
             pos.y -= (SQUARE_SIZE + SPACING_WIDTH) / 2;
@@ -195,46 +195,47 @@ void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_
             dark.secondary.b,
             dark.secondary.a);
         SDL_RenderFillRectF(renderer, &data_bg_rect);
-        
 
         draw_text(renderer, title_pos, text[i].title, title_font, white, true);
         draw_text(renderer, data_pos, text[i].data, data_font, light.primary, false);
     }
 }
 
-void draw_icon(SDL_Renderer *renderer, SDL_FRect rect, char *file_path)
+int draw_icon(SDL_Renderer *renderer, SDL_FRect rect, char *file_path)
 {
     SDL_Surface *surface = IMG_Load(file_path);
     if (!surface)
     {
         fprintf(stderr, "TTF_RenderText_Solid Error: %s\n", TTF_GetError());
-        return;
+        return 0;
     }
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture)
     {
         fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", IMG_GetError());
-        return;
+        return 0;
     }
 
     SDL_RenderCopyF(renderer, texture, NULL, &rect);
     SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);
+
+    return 1;
 }
 
-void draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font, SDL_Color color, bool center)
+int draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font, SDL_Color color, bool center)
 {
     SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
     if (!surface)
     {
         fprintf(stderr, "TTF_RenderText_Solid Error: %s\n", TTF_GetError());
-        return;
+        return 0;
     }
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture)
     {
         fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", TTF_GetError());
-        return;
+        return 0;
     }
     SDL_FRect text_rect = {
         .x = rect.x + SPACING_WIDTH,
@@ -250,4 +251,60 @@ void draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *fon
     SDL_RenderCopyF(renderer, texture, NULL, &text_rect);
     SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);
+
+    return 1;
+}
+
+void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color)
+{
+    char *alt_text;
+    SDL_FRect icon_rect = {
+        .x = rect.x,
+        .y = rect.y,
+        .h = ICON_SIZE,
+        .w = ICON_SIZE};
+    SDL_FRect text_rect = {
+        .x = icon_rect.x + icon_rect.w,
+        .y = icon_rect.y + 0.5 * (ICON_SIZE - TITLE_SIZE * 0.8125),
+        .w = rect.w - icon_rect.w - SPACING_WIDTH,
+        .h = ICON_SIZE};
+
+
+    if (!draw_icon(renderer, icon_rect, text.icon_path))
+    {
+        text_rect.x = rect.x;
+        text_rect.w = rect.w;
+        alt_text = (char *)malloc(sizeof(text.text) + 2 * sizeof(char));
+        sprintf(alt_text, "%s: %c", text.text.name, text.text.bind);
+    }
+    else
+    {
+        alt_text = (char *)malloc(sizeof(text.text.bind) + 3 * sizeof(char));
+        sprintf(alt_text, "%s", text.text.bind);
+    }
+    if (strlen(alt_text) > 6)
+    {
+        text_rect.y = icon_rect.y + 0.5 * (ICON_SIZE - TEXT_SIZE * 0.8125);
+        draw_text(renderer, text_rect, alt_text, long_text_font, color, false);
+    }
+    else
+    {
+        draw_text(renderer, text_rect, alt_text, font, color, false);
+    }
+}
+
+void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText texts[], int texts_num, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color)
+{
+    int ypos = rect.y;
+
+    for (int i = 0; i < texts_num; i++)
+    {
+        SDL_FRect bind_rect = {
+            .x = rect.x,
+            .h = ICON_SIZE,
+            .w = rect.w,
+            .y = ypos};
+        draw_icon_text(renderer, bind_rect, texts[i], font, long_text_font, color);
+        ypos += bind_rect.h + SPACING_WIDTH;
+    }
 }

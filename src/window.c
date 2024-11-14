@@ -3,39 +3,7 @@
 int game_window()
 {
     int window_width, window_height;
-    const SDL_FRect hold_box = {
-        .h = SQUARE_SIZE * 2 + SPACING_WIDTH * 8 + TITLE_SIZE,
-        .w = SQUARE_SIZE * 4 + SPACING_WIDTH * 7, // ||___||___||___||___||
-        .x = 5,
-        .y = 5};
 
-    const SDL_FRect matrice_box = {
-        .h = FIELD_HEIGHT * (SQUARE_SIZE + SPACING_WIDTH),
-        .w = FIELD_WIDTH * (SQUARE_SIZE + SPACING_WIDTH),
-        .x = hold_box.w + hold_box.x + SPACING_WIDTH,
-        .y = 5};
-    const SDL_FRect next_box = {
-        .h = SQUARE_SIZE * 2 + SPACING_WIDTH * 8 + TITLE_SIZE,
-        .w = SQUARE_SIZE * 4 + SPACING_WIDTH * 7, // ||___||___||___||___||
-        .x = matrice_box.w + matrice_box.x,
-        .y = 5};
-    const SDL_FRect score_box = {
-        .h = (TITLE_SIZE + TEXT_SIZE),
-        .w = hold_box.w,
-        .x = hold_box.x,
-        .y = matrice_box.h + matrice_box.y};
-    const SDL_FRect cog_img_box = {
-        .h = ICON_SIZE,
-        .w = ICON_SIZE,
-        .x = next_box.x + next_box.w - ICON_SIZE,
-        .y = matrice_box.h + matrice_box.y - ICON_SIZE
-    };
-    const SDL_FRect sound_img_box = {
-        .h = ICON_SIZE,
-        .w = ICON_SIZE,
-        .x = cog_img_box.x - ICON_SIZE - SPACING_WIDTH,
-        .y = cog_img_box.y,
-    };
     // SDL Initialization
     if (SDL_Init(SDL_INIT_VIDEO))
     { // If Initialization Failed, return 1
@@ -49,19 +17,22 @@ int game_window()
         return 1;
     }
 
-    if(IMG_Init(IMG_INIT_PNG) == 0) {
+    if (IMG_Init(IMG_INIT_PNG) == 0)
+    {
         fprintf(stderr, "IMG_Init Error: %s\n", IMG_GetError());
         return 1;
     }
 
     // Create SDL Window
     SDL_Window *window = SDL_CreateWindow(
-        "ZAM0074 - Tetris",                      // Window title
-        100,                                     // Y coords
-        100,                                     // X coords
-        next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
-        matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
-        SDL_WINDOW_SHOWN                         // Show window right after creation
+        "ZAM0074 - Tetris", // Window title
+        100,                // Y coords
+        100,                // X coords
+        1920,               // Default window width
+        1080,               // Default window height
+        // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
+        // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
+        SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
     );
 
     // If Creation Failed, return 1
@@ -90,7 +61,7 @@ int game_window()
         return 1;
     }
 
-    game_infinite_loop(renderer, window_width, window_height, hold_box, next_box, matrice_box, score_box, cog_img_box, sound_img_box);
+    game_infinite_loop(renderer, window_width, window_height);
 
     TTF_Quit();
     SDL_DestroyRenderer(renderer);
@@ -105,8 +76,58 @@ int SDL_rand(int max)
     return rand() % (max + 1);
 }
 
-void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height, SDL_FRect hold_box, SDL_FRect next_box, SDL_FRect matrice_box, SDL_FRect score_box, SDL_FRect cog_img_box, SDL_FRect sound_img_box )
+void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
 {
+    SDL_FPoint object_size = {
+        .x = SQUARE_SIZE * 4 + SPACING_WIDTH * 7,             // Object box width
+        .y = SQUARE_SIZE * 2 + SPACING_WIDTH * 10 + TITLE_SIZE // Object box height
+    };
+    SDL_FPoint matrice_size = {
+        .y = FIELD_HEIGHT * (SQUARE_SIZE + SPACING_WIDTH),
+        .x = FIELD_WIDTH * (SQUARE_SIZE + SPACING_WIDTH),
+    };
+    SDL_FPoint starting_pos = {
+        .x = 0.5 * (window_width - (SPACING_WIDTH + object_size.x + SPACING_WIDTH + matrice_size.x + SPACING_WIDTH + object_size.x + SPACING_WIDTH)),
+        .y = 0.5 * (window_height - (SPACING_WIDTH + matrice_size.y + SPACING_WIDTH))};
+    const SDL_FRect hold_box = {
+        .h = object_size.y,
+        .w = object_size.x, // ||___||___||___||___||
+        .x = starting_pos.x,
+        .y = starting_pos.y};
+
+    const SDL_FRect matrice_box = {
+        .h = matrice_size.y,
+        .w = matrice_size.x,
+        .x = hold_box.w + hold_box.x + SPACING_WIDTH,
+        .y = hold_box.y};
+    const SDL_FRect next_box = {
+        .h = object_size.y,
+        .w = object_size.x, // ||___||___||___||___||
+        .x = matrice_box.w + matrice_box.x,
+        .y = matrice_box.y};
+    const SDL_FRect score_box = {
+        .h = (TITLE_SIZE + TEXT_SIZE),
+        .w = hold_box.w,
+        .x = hold_box.x,
+        .y = matrice_box.h + matrice_box.y};
+    const SDL_FRect cog_img_box = {
+        .h = ICON_SIZE,
+        .w = ICON_SIZE,
+        .x = next_box.x + next_box.w - ICON_SIZE,
+        .y = matrice_box.h + matrice_box.y - ICON_SIZE};
+    const SDL_FRect sound_img_box = {
+        .h = ICON_SIZE,
+        .w = ICON_SIZE,
+        .x = cog_img_box.x - ICON_SIZE - SPACING_WIDTH,
+        .y = cog_img_box.y,
+    };
+    const SDL_FRect binds_box = {
+        .h = BINDS_NUM * (ICON_SIZE + SPACING_WIDTH),
+        .w = next_box.w,
+        .x = next_box.x,
+        .y = cog_img_box.y - cog_img_box.h - BINDS_NUM * (ICON_SIZE + SPACING_WIDTH),
+    };
+
     bool running = true;
     SDL_Event e;
     int game_field[FIELD_HEIGHT][FIELD_WIDTH];
@@ -174,16 +195,41 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
     // TMovement move;
     TMovement move = {
-        .move_down = move_down,
-        .move_left = move_left,
-        .move_down = move_down,
-        .move_hold = move_hold,
-        .rotate_right = rotate_right,
-        .rotate_left = rotate_left};
+        .move_down.bind[0] = move_down,
+        .move_down.sdl_name = move_down,
+        .move_left.bind[0] = move_left,
+        .move_left.sdl_name = move_left,
+        .move_right.bind[0] = move_right,
+        .move_right.sdl_name = move_right,
+        .move_hold.bind[0] = move_hold,
+        .move_hold.sdl_name = move_hold,
+        .rotate_right.bind[0] = rotate_right,
+        .rotate_right.sdl_name = rotate_right,
+        .rotate_left.bind[0] = rotate_left,
+        .rotate_left.sdl_name = rotate_left};
 
     if (!get_settings(&move))
     {
         fprintf(stderr, "Failed to open config file", SDL_GetError());
+    }
+
+    TIconText binds[BINDS_NUM];
+    binds[0].text = move.move_down;
+    binds[0].icon_path = ARROW_DOWN;
+    binds[1].text = move.move_left;
+    binds[1].icon_path = ARROW_LEFT;
+    binds[2].text = move.move_right;
+    binds[2].icon_path = ARROW_RIGHT;
+    binds[3].text = move.move_hold;
+    binds[3].icon_path = HOLD;
+    binds[4].text = move.rotate_left;
+    binds[4].icon_path = ROTATE_CC;
+    binds[5].text = move.rotate_right;
+    binds[5].icon_path = ROTATE_CW;
+
+    for (int i = 0; i < BINDS_NUM; i++)
+    {
+        printf("%s, %s\n", binds[i].text.bind, binds[i].icon_path);
     }
 
     // Matrice initialization
@@ -226,7 +272,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                 break;
             case SDL_KEYDOWN:
                 printf("%c\t%d\n", e.key.keysym.sym, e.key.keysym.sym);
-                if (e.key.keysym.sym == move.move_down.bind)
+                if (e.key.keysym.sym == move.move_down.sdl_name)
                 {
 
                     printf("Down\n");
@@ -280,7 +326,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_left.bind)
+                if (e.key.keysym.sym == move.move_left.sdl_name)
                 {
 
                     printf("Left\n");
@@ -295,7 +341,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_right.bind)
+                if (e.key.keysym.sym == move.move_right.sdl_name)
                 {
 
                     printf("Right\n");
@@ -310,7 +356,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if (e.key.keysym.sym == move.move_hold.bind)
+                if (e.key.keysym.sym == move.move_hold.sdl_name)
                 {
 
                     if (!held_current_object)
@@ -339,7 +385,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                     }
                     continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_left.bind)
+                if ((char)e.key.keysym.sym == move.rotate_left.sdl_name)
                 {
 
                     printf("RotateL\n");
@@ -355,7 +401,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
                     continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_right.bind)
+                if ((char)e.key.keysym.sym == move.rotate_right.sdl_name)
                 {
 
                     printf("RotateR\n");
@@ -437,8 +483,9 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         draw_playing_field(renderer, game_field, game_field_pos);
         draw_object_matrice(renderer, game_field_pos, object);
         draw_object_box(renderer, light.secondary, next_box, next, "next", title_font); // Next object box
-        draw_icon(renderer, cog_img_box, "../public/icons/cog.png");
-        draw_icon(renderer, sound_img_box, "../public/icons/volume_on.png");
+        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white);
+        draw_icon(renderer, cog_img_box, COG);
+        draw_icon(renderer, sound_img_box, VOLUME_ON);
         SDL_RenderPresent(renderer);
     }
     TTF_CloseFont(title_font);
@@ -465,11 +512,11 @@ void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 
 int get_settings(TMovement *binds)
 {
+
     FILE *f;
     char row[SETTINGS_ROW_SIZE];
-    char *name, *bind;
-    char normalized_bind;
-    memset(row, '\0',SETTINGS_ROW_SIZE);
+    char *name, *bind, sdl_bind;
+    char normalized_bind[WORD_SIZE];
     f = fopen("../data/cfg/user.cfg", "r");
     if (!f)
     {
@@ -477,6 +524,7 @@ int get_settings(TMovement *binds)
     }
     while (fgets(row, SETTINGS_ROW_SIZE, f))
     {
+        memset(normalized_bind, '\0', WORD_SIZE);
         name = strtok(row, ":");
         if (!name)
         {
@@ -488,63 +536,93 @@ int get_settings(TMovement *binds)
             continue;
         }
         strtok(NULL, "\n"); // Skip comments
-        printf("%s\t%s",name, bind);
 
-        normalized_bind = '\0';
-
-        for (int i = 0; i < (int)strlen(bind); i++)
+        for (int i = 0, j = 0; i < (int)strlen(bind); i++, j++)
         {
             if (bind[i] == ' ')
             {
+                j--;
                 continue;
             }
-            normalized_bind = bind[i];
-            break;
+            normalized_bind[j] = bind[i];
         }
-
-        if (normalized_bind == '\0')
-        {
-            continue;
-        }
+        sdl_bind = get_sdl_name(normalized_bind);
         if (strcmp("move_left", name) == 0)
         {
             SDL_strlcpy(binds->move_left.name, name, sizeof(binds->move_left.name));
-            binds->move_left.bind = normalized_bind;
+            SDL_strlcpy(binds->move_left.bind, normalized_bind, sizeof(normalized_bind));
+            binds->move_left.sdl_name = sdl_bind;
+
             continue;
         }
         if (strcmp("move_right", name) == 0)
         {
             SDL_strlcpy(binds->move_right.name, name, sizeof(binds->move_left.name));
-            binds->move_right.bind = normalized_bind;
+            SDL_strlcpy(binds->move_right.bind, normalized_bind, sizeof(normalized_bind));
+            binds->move_right.sdl_name = sdl_bind;
             continue;
         }
         if (strcmp("move_down", name) == 0)
         {
             SDL_strlcpy(binds->move_down.name, name, sizeof(binds->move_left.name));
-            binds->move_down.bind = normalized_bind;
+            SDL_strlcpy(binds->move_down.bind, normalized_bind, sizeof(normalized_bind));
+            binds->move_down.sdl_name = sdl_bind;
             continue;
         }
         if (strcmp("move_hold", name) == 0)
         {
             SDL_strlcpy(binds->move_hold.name, name, sizeof(binds->move_left.name));
-            binds->move_hold.bind = normalized_bind;
+            SDL_strlcpy(binds->move_hold.bind, normalized_bind, sizeof(normalized_bind));
+            binds->move_hold.sdl_name = sdl_bind;
             continue;
         }
         if (strcmp("rotate_right", name) == 0)
         {
             SDL_strlcpy(binds->rotate_right.name, name, sizeof(binds->move_left.name));
-            binds->rotate_right.bind = normalized_bind;
+            SDL_strlcpy(binds->rotate_right.bind, normalized_bind, sizeof(normalized_bind));
+            binds->rotate_right.sdl_name = sdl_bind;
             continue;
         }
         if (strcmp("rotate_left", name) == 0)
         {
             printf("true");
             SDL_strlcpy(binds->rotate_left.name, name, sizeof(binds->move_left.name));
-            binds->rotate_left.bind = normalized_bind;
+            SDL_strlcpy(binds->rotate_left.bind, normalized_bind, sizeof(normalized_bind));
+            binds->rotate_left.sdl_name = sdl_bind;
             continue;
         }
     }
 
     fclose(f);
     return 1;
+}
+
+char get_sdl_name(char *name)
+{
+    for (int i = 0; i < (int)strlen(name); i++)
+    {
+        tolower(name[i]);
+    }
+
+    if (strcmp(name, "arrow_left") == 0)
+    {
+        return 'P';
+    }
+    if (strcmp(name, "arrow_right") == 0)
+    {
+        return 'O';
+    }
+    if (strcmp(name, "arrow_up") == 0)
+    {
+        return 'R';
+    }
+    if (strcmp(name, "arrow_down") == 0)
+    {
+        return 'Q';
+    }
+    if (strcmp(name, "space") == 0)
+    {
+        return ' ';
+    }
+    return name[0];
 }
