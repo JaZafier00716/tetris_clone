@@ -18,7 +18,8 @@
 #define SQUARE_SIZE 40
 #define SHADE_WIDTH 5
 #define SPACING_WIDTH 5
-#define TEXT_SIZE 64
+#define TITLE_SIZE 64
+#define TEXT_SIZE 32
 #define OBJECT_MATRICE_SIZE 4
 #define SETTINGS_ROW_SIZE 50
 #define WORD_SIZE 20

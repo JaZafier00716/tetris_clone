@@ -4,7 +4,7 @@ int game_window()
 {
     int window_width, window_height;
     const SDL_FRect hold_box = {
-        .h = SQUARE_SIZE * 2 + SPACING_WIDTH * 10 + TEXT_SIZE,
+        .h = SQUARE_SIZE * 2 + SPACING_WIDTH * 8 + TITLE_SIZE,
         .w = SQUARE_SIZE * 4 + SPACING_WIDTH * 7, // ||___||___||___||___||
         .x = 5,
         .y = 5};
@@ -15,12 +15,12 @@ int game_window()
         .x = hold_box.w + hold_box.x + SPACING_WIDTH,
         .y = 5};
     const SDL_FRect next_box = {
-        .h = SQUARE_SIZE * 2 + SPACING_WIDTH * 8 + TEXT_SIZE,
+        .h = SQUARE_SIZE * 2 + SPACING_WIDTH * 8 + TITLE_SIZE,
         .w = SQUARE_SIZE * 4 + SPACING_WIDTH * 7, // ||___||___||___||___||
         .x = matrice_box.w + matrice_box.x,
         .y = 5};
     const SDL_FRect score_box = {
-        .h = (TEXT_SIZE + TEXT_SIZE / 2),
+        .h = (TITLE_SIZE + TEXT_SIZE),
         .w = hold_box.w,
         .x = hold_box.x,
         .y = matrice_box.h + matrice_box.y};
@@ -116,8 +116,8 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     };
 
     // Font Definition
-    TTF_Font *title_font = TTF_OpenFont("../data/fonts/ProggyCleanNerdFontMono-Regular.ttf", TEXT_SIZE);
-    TTF_Font *data_font = TTF_OpenFont("../data/fonts/ProggyCleanNerdFontMono-Regular.ttf", TEXT_SIZE / 2);
+    TTF_Font *title_font = TTF_OpenFont("../data/fonts/ProggyCleanNerdFontMono-Regular.ttf", TITLE_SIZE);
+    TTF_Font *data_font = TTF_OpenFont("../data/fonts/ProggyCleanNerdFontMono-Regular.ttf", TEXT_SIZE);
 
     if (!title_font)
     {

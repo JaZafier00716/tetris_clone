@@ -17,6 +17,7 @@ void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect bo
 void get_text_and_rect(SDL_Renderer *renderer, int x, int y, char *text, TTF_Font *font, SDL_Texture **texture, SDL_Rect *rect);
 void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_font, TDataText text[], int text_num, SDL_FRect rect);
 void draw_icon(SDL_Renderer *renderer, SDL_FRect rect, char *file_path);
+void draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font, SDL_Color color, bool center);
 /* === End draw.c Functions === */
 
 
