@@ -27,7 +27,7 @@
 #define BINDS_NUM 6
 /* === End Define Constants === */
 
-/* === Start Define icon paths === */
+/* === Start Define asset paths === */
 #define ARROW_DOWN "../public/icons/arrow_down.png"
 #define ARROW_LEFT "../public/icons/arrow_left.png"
 #define ARROW_RIGHT "../public/icons/arrow_right.png"
@@ -37,7 +37,8 @@
 #define ROTATE_CW "../public/icons/rotate_cw.png"
 #define VOLUME_MUTE "../public/icons/volume_mute.png"
 #define VOLUME_ON "../public/icons/volume_on.png"
-/* === End Define icon paths === */
+#define FONT "../data/fonts/ProggyCleanNerdFontMono-Regular.ttf"
+/* === End Define asset paths === */
 
 /* === Start Define Common Structures === */
 typedef struct

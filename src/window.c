@@ -79,7 +79,7 @@ int SDL_rand(int max)
 void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
 {
     SDL_FPoint object_size = {
-        .x = SQUARE_SIZE * 4 + SPACING_WIDTH * 7,             // Object box width
+        .x = SQUARE_SIZE * 4 + SPACING_WIDTH * 7,              // Object box width
         .y = SQUARE_SIZE * 2 + SPACING_WIDTH * 10 + TITLE_SIZE // Object box height
     };
     SDL_FPoint matrice_size = {
@@ -137,8 +137,8 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     };
 
     // Font Definition
-    TTF_Font *title_font = TTF_OpenFont("../data/fonts/ProggyCleanNerdFontMono-Regular.ttf", TITLE_SIZE);
-    TTF_Font *data_font = TTF_OpenFont("../data/fonts/ProggyCleanNerdFontMono-Regular.ttf", TEXT_SIZE);
+    TTF_Font *title_font = TTF_OpenFont(FONT, TITLE_SIZE);
+    TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
 
     if (!title_font)
     {
