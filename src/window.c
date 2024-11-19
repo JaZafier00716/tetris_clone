@@ -511,11 +511,13 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     }
     TTF_CloseFont(title_font);
     TTF_CloseFont(data_font);
-    for (;;)
+    if (game_over)
     {
-        
+        do
+        {
+            SDL_PollEvent(&e);
+        } while (e.type != SDL_QUIT);
     }
-    
 };
 
 void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
