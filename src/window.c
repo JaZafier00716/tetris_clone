@@ -2,7 +2,9 @@
 
 int game_window()
 {
-    int window_width, window_height;
+    int select_window = MENU;
+    int window_width,
+        window_height;
 
     // SDL Initialization
     if (SDL_Init(SDL_INIT_VIDEO))
@@ -25,17 +27,15 @@ int game_window()
 
     // Create SDL Window
     SDL_Window *window = SDL_CreateWindow(
-        "ZAM0074 - Tetris", // Window title
-        100,                // Y coords
-        100,                // X coords
-        1920,               // Default window width
-        1080,               // Default window height
+        "ZAM0074 - Tetris/game_window", // Window title
+        100,                            // Y coords
+        100,                            // X coords
+        1920,                           // Default window width
+        1080,                           // Default window height
         // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
         // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
         SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
     );
-
-    // If Creation Failed, return 1
     if (!window)
     {
         fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
@@ -43,7 +43,21 @@ int game_window()
         return 1;
     }
 
-    SDL_GetWindowSize(window, &window_width, &window_height); // Get window width and height
+    SDL_Window *menu_window = SDL_CreateWindow(
+        "ZAM0074 - Tetris/menu_window", // Window title
+        100,                            // Y coords
+        100,                            // X coords
+        800,                            // Default window width
+        600,                            // Default window height
+        SDL_WINDOW_FULLSCREEN_DESKTOP   // Show window right after creation
+    );
+    if (!menu_window)
+    {
+        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+    // If Creation Failed, return 1
 
     // Create SDL Renderer
     SDL_Renderer *renderer = SDL_CreateRenderer(
@@ -61,11 +75,37 @@ int game_window()
         return 1;
     }
 
-    game_infinite_loop(renderer, window_width, window_height);
+    SDL_Renderer *menu_renderer = SDL_CreateRenderer(
+        menu_window,
+        -1,
+        SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
+    );
+
+    // If Creation Failed, return 1
+    if (!menu_renderer)
+    {
+        SDL_DestroyWindow(window);
+        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+        SDL_Quit();
+        return 1;
+    }
+
+    if (window == MENU)
+    {
+        SDL_GetWindowSize(menu_window, &window_width, &window_height); // Get window width and height
+        main_menu(menu_renderer, window_width, window_height);
+        SDL_DestroyRenderer(menu_renderer);
+        SDL_DestroyWindow(menu_window);
+    }
+    if (window == GAME)
+    {
+        SDL_GetWindowSize(window, &window_width, &window_height); // Get window width and height
+        game_infinite_loop(renderer, window_width, window_height);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+    }
 
     TTF_Quit();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
     SDL_Quit();
 
     return 0;
@@ -76,7 +116,15 @@ int SDL_rand(int max)
     return rand() % (max + 1);
 }
 
-void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
+int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
+{
+    // Render "Start game" button and return game 
+    // Render "Settings button" and return settings
+    // Render "High score" box
+
+}
+
+int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
 {
     SDL_FPoint object_size = {
         .x = SQUARE_SIZE * 4 + SPACING_WIDTH * 7,              // Object box width
@@ -150,13 +198,13 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     if (!title_font)
     {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        return;
+        return -1;
     }
     TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
     if (!data_font)
     {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        return;
+        return -1;
     }
 
     // Score and lines text
@@ -164,14 +212,14 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     char score_str[WORD_SIZE];
     char lines_str[WORD_SIZE];
     TDataText data_texts[3];
-    data_texts[0].title = "LEVEL";
+    data_texts[0].title = LEVEL_TEXT;
     data_texts[0].data = "0";
-    data_texts[1].title = "SCORE";
+    data_texts[1].title = SCORE_TEXT;
     data_texts[1].data = "0";
-    data_texts[2].title = "LINES";
+    data_texts[2].title = LINES_TEXT;
     data_texts[2].data = "0";
 
-    // An array Cntaining all objects
+    // An array Cotaining all objects
     TObject object_array[7] = {
         object_I,
         object_J,
@@ -223,6 +271,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     if (!get_settings(&move))
     {
         fprintf(stderr, "Failed to open config file", SDL_GetError());
+        return -1;
     }
 
     TIconText binds[BINDS_NUM];
@@ -323,16 +372,16 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                             switch (cleared_lines)
                             {
                             case 1:
-                                score += 40;
+                                score += 40 * (level + 1);
                                 break;
                             case 2:
-                                score += 100;
+                                score += 100 * (level + 1);
                                 break;
                             case 3:
-                                score += 300;
+                                score += 300 * (level + 1);
                                 break;
                             case 4:
-                                score += 1200;
+                                score += 1200 * (level + 1);
                                 break;
                             }
 
@@ -510,20 +559,20 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                         data_texts[0].data = level_str;
                     }
 
-                    // Original BPS scoring system -- edit - cannot be used (would have to add stages) - use Original Nintendo scoring system
+                    // Original Nintendo scoring system
                     switch (cleared_lines)
                     {
                     case 1:
-                        score += 40;
+                        score += 40 * (level + 1);
                         break;
                     case 2:
-                        score += 100;
+                        score += 100 * (level + 1);
                         break;
                     case 3:
-                        score += 300;
+                        score += 300 * (level + 1);
                         break;
                     case 4:
-                        score += 1200;
+                        score += 1200 * (level + 1);
                         break;
                     }
 
@@ -579,17 +628,17 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
         draw_background(renderer, black);
 
-        draw_object_box(renderer, light.secondary, hold_box, hold, "hold", title_font);                 // Hold object box
-        draw_text_box(renderer, title_font, data_font, data_texts, 3, score_box);                       // Score box
-        draw_playing_field(renderer, game_field, game_field_pos);                                       // Game matrice
-        draw_object_matrice(renderer, game_field_pos, object);                                          // Object
-        draw_object_box(renderer, light.secondary, next_box, next, "next", title_font);                 // Next object box
-        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white);      // Binds box
-        draw_icon(renderer, cog_img_box, COG);                                                          // Settings Icon
-        draw_icon(renderer, sound_img_box, VOLUME_ON);                                                  // Sound Icon
+        draw_object_box(renderer, light.secondary, hold_box, hold, HOLD_BOX_TEXT, title_font);     // Hold object box
+        draw_text_box(renderer, title_font, data_font, data_texts, 3, score_box);                  // Score box
+        draw_playing_field(renderer, game_field, game_field_pos);                                  // Game matrice
+        draw_object_matrice(renderer, game_field_pos, object);                                     // Object
+        draw_object_box(renderer, light.secondary, next_box, next, NEXT_BOX_TEXT, title_font);     // Next object box
+        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white); // Binds box
+        draw_icon(renderer, cog_img_box, COG);                                                     // Settings Icon
+        draw_icon(renderer, sound_img_box, VOLUME_ON);                                             // Sound Icon
         if (game_over)
         {
-            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true);                // Game Over text
+            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true); // Game Over text
         }
         SDL_RenderPresent(renderer);
     }
@@ -597,6 +646,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     TTF_CloseFont(data_font);
     if (game_over)
     {
+        // return display for choosing between restart, menu and settings and based on that return target window
         do
         {
             SDL_PollEvent(&e);
