@@ -94,7 +94,6 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         .w = object_size.x, // ||___||___||___||___||
         .x = starting_pos.x,
         .y = starting_pos.y};
-
     const SDL_FRect matrice_box = {
         .h = matrice_size.y,
         .w = matrice_size.x,
@@ -133,25 +132,27 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         .x = 0,
         .y = (window_height - TITLE_SIZE) / 2,
     };
-
-    bool running = true;
-    bool game_over = false;
-    SDL_Event e;
-    int game_field[FIELD_HEIGHT][FIELD_WIDTH];
     SDL_FPoint game_field_pos = {
         .x = matrice_box.x,
         .y = matrice_box.y,
     };
 
+    bool running = true;
+    bool game_over = false;
+    SDL_Event e;
+    int game_field[FIELD_HEIGHT][FIELD_WIDTH];
+
+    // Matrice initialization
+    matrice_init(game_field);
+
     // Font Definition
     TTF_Font *title_font = TTF_OpenFont(FONT, TITLE_SIZE);
-    TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
-
     if (!title_font)
     {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
         return;
     }
+    TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
     if (!data_font)
     {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
@@ -159,12 +160,16 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
     }
 
     // Score and lines text
-    char data_str[WORD_SIZE];
-    TDataText data_texts[2];
-    data_texts[0].title = "SCORE";
+    char level_str[WORD_SIZE];
+    char score_str[WORD_SIZE];
+    char lines_str[WORD_SIZE];
+    TDataText data_texts[3];
+    data_texts[0].title = "LEVEL";
     data_texts[0].data = "0";
-    data_texts[1].title = "LINES";
+    data_texts[1].title = "SCORE";
     data_texts[1].data = "0";
+    data_texts[2].title = "LINES";
+    data_texts[2].data = "0";
 
     // An array Cntaining all objects
     TObject object_array[7] = {
@@ -239,9 +244,6 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         printf("%s, %s\n", binds[i].text.bind, binds[i].icon_path);
     }
 
-    // Matrice initialization
-    matrice_init(game_field);
-
     // Object init
     object = object_array[random_object];
     // next = object_I;
@@ -260,13 +262,18 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
     object.pos = new_pos; // Default object position
 
-    int gravity_delay_ms = 1000;
+    int gravity_delay_ms = 800;
+    int delay = 48;
     Uint32 last_gravity_tick = SDL_GetTicks();
     Uint32 current_tick = SDL_GetTicks();
 
     int move_y_failed = 0;
     bool held_current_object = false;
-    int cleared_rows = 0;
+    int lines = 0;
+    int score = 0;
+    int level = 0;
+    int level_cleared_lines = 0;
+    int cleared_lines = 0;
 
     while (running)
     {
@@ -290,15 +297,52 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                         {
                             // Solidify current object
                             solidify(object, game_field);
-                            cleared_rows += remove_full_rows(game_field);
+                            cleared_lines = remove_full_rows(game_field);
+                            lines += cleared_lines;
+                            level_cleared_lines += cleared_lines;
+                            if (level_cleared_lines > 10)
+                            {
+                                if (level < 9)
+                                {
+                                    delay -= 5;
+                                }
+                                if (level > 18)
+                                {
+                                    delay = 1;
+                                }
+                                level++;
+                                gravity_delay_ms = delay / 60 * 1000;
+                                level_cleared_lines = 0;
 
-                            // Set new value to score and cleared lines
-                            printf("cleared rows: %d\n", cleared_rows);
-                            sprintf(data_str, "%d", cleared_rows);
-                            data_texts[0].data = data_str;
-                            sprintf(data_str, "%d", cleared_rows);
-                            data_texts[1].data = data_str;
-                            printf("%s\n", data_texts[0].data);
+                                // Update Level
+                                sprintf(level_str, "%d", level);
+                                data_texts[0].data = level_str;
+                            }
+
+                            // Original BPS scoring system -- edit - cannot be used (would have to add stages) - use Original Nintendo scoring system
+                            switch (cleared_lines)
+                            {
+                            case 1:
+                                score += 40;
+                                break;
+                            case 2:
+                                score += 100;
+                                break;
+                            case 3:
+                                score += 300;
+                                break;
+                            case 4:
+                                score += 1200;
+                                break;
+                            }
+
+                            // Update Score
+                            sprintf(score_str, "%d", score);
+                            data_texts[1].data = score_str;
+
+                            // Update Lines
+                            sprintf(lines_str, "%d", lines);
+                            data_texts[2].data = lines_str;
 
                             // reset variables
                             held_current_object = false;
@@ -320,9 +364,11 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
                             // Set new next object
                             next = object_array[random_next];
+
                             if (object_collision_detection(object, game_field))
                             {
                                 game_over = true;
+                                running = 0;
                             }
                         }
                         else
@@ -442,15 +488,52 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
                 {
                     // Solidify current object
                     solidify(object, game_field);
-                    cleared_rows += remove_full_rows(game_field);
+                    cleared_lines = remove_full_rows(game_field);
+                    lines += cleared_lines;
+                    level_cleared_lines += cleared_lines;
+                    if (level_cleared_lines > 10)
+                    {
+                        if (level < 9)
+                        {
+                            delay -= 5;
+                        }
+                        if (level > 18)
+                        {
+                            delay = 1;
+                        }
+                        level++;
+                        gravity_delay_ms = delay / 60 * 1000;
+                        level_cleared_lines = 0;
 
-                    // Set new value to score and cleared lines
-                    printf("cleared rows: %d\n", cleared_rows);
-                    sprintf(data_str, "%d", cleared_rows);
-                    data_texts[0].data = data_str;
-                    sprintf(data_str, "%d", cleared_rows);
-                    data_texts[1].data = data_str;
-                    printf("%s\n", data_texts[0].data);
+                        // Update Level
+                        sprintf(level_str, "%d", level);
+                        data_texts[0].data = level_str;
+                    }
+
+                    // Original BPS scoring system -- edit - cannot be used (would have to add stages) - use Original Nintendo scoring system
+                    switch (cleared_lines)
+                    {
+                    case 1:
+                        score += 40;
+                        break;
+                    case 2:
+                        score += 100;
+                        break;
+                    case 3:
+                        score += 300;
+                        break;
+                    case 4:
+                        score += 1200;
+                        break;
+                    }
+
+                    // Update Score
+                    sprintf(score_str, "%d", score);
+                    data_texts[1].data = score_str;
+
+                    // Update Lines
+                    sprintf(lines_str, "%d", lines);
+                    data_texts[2].data = lines_str;
 
                     // reset variables
                     held_current_object = false;
@@ -487,6 +570,7 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
             }
             else
             {
+                score += 1;
                 object.pos = new_pos;
                 move_y_failed = 0;
             }
@@ -495,17 +579,17 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
         draw_background(renderer, black);
 
-        draw_object_box(renderer, light.secondary, hold_box, hold, "hold", title_font); // Hold object box
-        draw_text_box(renderer, title_font, data_font, data_texts, 2, score_box);
-        draw_playing_field(renderer, game_field, game_field_pos);
-        draw_object_matrice(renderer, game_field_pos, object);
-        draw_object_box(renderer, light.secondary, next_box, next, "next", title_font); // Next object box
-        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white);
-        draw_icon(renderer, cog_img_box, COG);
-        draw_icon(renderer, sound_img_box, VOLUME_ON);
+        draw_object_box(renderer, light.secondary, hold_box, hold, "hold", title_font);                 // Hold object box
+        draw_text_box(renderer, title_font, data_font, data_texts, 3, score_box);                       // Score box
+        draw_playing_field(renderer, game_field, game_field_pos);                                       // Game matrice
+        draw_object_matrice(renderer, game_field_pos, object);                                          // Object
+        draw_object_box(renderer, light.secondary, next_box, next, "next", title_font);                 // Next object box
+        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white);      // Binds box
+        draw_icon(renderer, cog_img_box, COG);                                                          // Settings Icon
+        draw_icon(renderer, sound_img_box, VOLUME_ON);                                                  // Sound Icon
         if (game_over)
         {
-            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true);
+            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true);                // Game Over text
         }
         SDL_RenderPresent(renderer);
     }

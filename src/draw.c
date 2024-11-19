@@ -139,7 +139,7 @@ void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, TObject obje
 void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_font, TDataText text[], int text_num, SDL_FRect rect)
 {
     SDL_FRect outer = {
-        .h = rect.h * text_num,
+        .h = rect.h * text_num - SPACING_WIDTH*2 * text_num,
         .w = rect.w,
         .x = rect.x,
         .y = rect.y - (TITLE_SIZE + TEXT_SIZE) * text_num - SPACING_WIDTH};
@@ -148,7 +148,7 @@ void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_
         .y = outer.y + SPACING_WIDTH,
         .h = outer.h - 2 * SPACING_WIDTH,
         .w = outer.w - 2 * SPACING_WIDTH};
-    int title_ypos = inner.y;
+    int title_ypos = inner.y + SPACING_WIDTH;
     int data_ypos = 0;
 
     SDL_SetRenderDrawColor(
@@ -268,7 +268,6 @@ void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_
         .y = icon_rect.y + 0.5 * (ICON_SIZE - TITLE_SIZE * 0.8125),
         .w = rect.w - icon_rect.w - SPACING_WIDTH,
         .h = ICON_SIZE};
-
 
     if (!draw_icon(renderer, icon_rect, text.icon_path))
     {
