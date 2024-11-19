@@ -127,8 +127,15 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         .x = next_box.x,
         .y = cog_img_box.y - cog_img_box.h - BINDS_NUM * (ICON_SIZE + SPACING_WIDTH),
     };
+    const SDL_FRect game_over_box = {
+        .h = TITLE_SIZE,
+        .w = window_width,
+        .x = 0,
+        .y = (window_height - TITLE_SIZE) / 2,
+    };
 
     bool running = true;
+    bool game_over = false;
     SDL_Event e;
     int game_field[FIELD_HEIGHT][FIELD_WIDTH];
     SDL_FPoint game_field_pos = {
@@ -313,6 +320,10 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
                             // Set new next object
                             next = object_array[random_next];
+                            if (object_collision_detection(object, game_field))
+                            {
+                                game_over = true;
+                            }
                         }
                         else
                         {
@@ -461,6 +472,12 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
 
                     // Set new next object
                     next = object_array[random_next];
+
+                    if (object_collision_detection(object, game_field))
+                    {
+                        game_over = true;
+                        running = 0;
+                    }
                 }
                 else
                 {
@@ -486,10 +503,19 @@ void game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_hei
         draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white);
         draw_icon(renderer, cog_img_box, COG);
         draw_icon(renderer, sound_img_box, VOLUME_ON);
+        if (game_over)
+        {
+            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true);
+        }
         SDL_RenderPresent(renderer);
     }
     TTF_CloseFont(title_font);
     TTF_CloseFont(data_font);
+    for (;;)
+    {
+        
+    }
+    
 };
 
 void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])

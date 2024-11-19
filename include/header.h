@@ -39,6 +39,7 @@
 #define VOLUME_ON "../public/icons/volume_on.png"
 #define FONT "../data/fonts/ProggyCleanNerdFontMono-Regular.ttf"
 /* === End Define asset paths === */
+#define GAME_OVER_TEXT "GAME OVER"
 
 /* === Start Define Common Structures === */
 typedef struct
