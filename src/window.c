@@ -90,14 +90,14 @@ int game_window()
         return 1;
     }
 
-    if (window == MENU)
+    if (select_window == MENU)
     {
         SDL_GetWindowSize(menu_window, &window_width, &window_height); // Get window width and height
         main_menu(menu_renderer, window_width, window_height);
         SDL_DestroyRenderer(menu_renderer);
         SDL_DestroyWindow(menu_window);
     }
-    if (window == GAME)
+    if (select_window == GAME)
     {
         SDL_GetWindowSize(window, &window_width, &window_height); // Get window width and height
         game_infinite_loop(renderer, window_width, window_height);
@@ -118,10 +118,9 @@ int SDL_rand(int max)
 
 int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
 {
-    // Render "Start game" button and return game 
+    // Render "Start game" button and return game
     // Render "Settings button" and return settings
     // Render "High score" box
-
 }
 
 int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
@@ -652,7 +651,46 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
             SDL_PollEvent(&e);
         } while (e.type != SDL_QUIT);
     }
+    update_best_scores(score);
+    printf("score has been updated\n");
 };
+
+void update_best_scores(int score)
+{
+    char row[SETTINGS_ROW_SIZE];
+    int scores[BEST_SCORE_NUM], i = 0;
+    bool score_added = false;
+    FILE *f = fopen(SCORE_FILE, "a");
+    if (f)
+    {
+        while (fgets(row, sizeof(row), f))
+        {
+            scores[i] = atoi(strtok(row, "\n"));
+            i++;
+        }
+        fclose(f);
+    }
+    f = fopen(SCORE_FILE, "w");
+    for (int ii = 0; ii < i && ii < BEST_SCORE_NUM; ii++)
+    {
+        if (scores[ii] > score)
+        {
+            fprintf(f, "%d\n", scores[ii]);
+        }
+        else
+        {
+            if (!score_added)
+            {
+                fprintf(f, "%d\n", score);
+                score_added = true;
+                i--; // so you could add the current score into the file too
+            } else {
+                fprintf(f, "%d\n", scores[ii]);
+            }
+        }
+    }
+    fclose(f);
+}
 
 void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {

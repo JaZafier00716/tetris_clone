@@ -25,9 +25,11 @@
 #define WORD_SIZE 20
 #define ICON_SIZE 48
 #define BINDS_NUM 6
+#define BEST_SCORE_NUM 5
 /* === End Define Constants === */
 
 /* === Start Define asset paths === */
+#define SCORE_FILE "../data/best_score.txt"
 #define ARROW_DOWN "../public/icons/arrow_down.png"
 #define ARROW_LEFT "../public/icons/arrow_left.png"
 #define ARROW_RIGHT "../public/icons/arrow_right.png"
