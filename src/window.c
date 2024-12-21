@@ -7,7 +7,7 @@ int game_window()
         window_height;
 
     // SDL Initialization
-    if (SDL_Init(SDL_INIT_VIDEO))
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     { // If Initialization Failed, return 1
         fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
         return 1;
