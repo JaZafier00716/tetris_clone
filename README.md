@@ -44,6 +44,7 @@ Ensure that you have the following tools installed:
 
 1. **Navigate to the project's build directory**:
     \`
+    #mkdir -p build
     #cd tetris/build
     \`
 
