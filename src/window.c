@@ -2,7 +2,7 @@
 
 int game_window()
 {
-    int select_window = MENU;
+    int select_window = GAME;
     int window_width,
         window_height;
 
@@ -25,73 +25,36 @@ int game_window()
         return 1;
     }
 
-    // Create SDL Window
-    SDL_Window *window = SDL_CreateWindow(
-        "ZAM0074 - Tetris/game_window", // Window title
-        100,                            // Y coords
-        100,                            // X coords
-        1920,                           // Default window width
-        1080,                           // Default window height
-        // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
-        // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
-        SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
-    );
-    if (!window)
-    {
-        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Window *menu_window = SDL_CreateWindow(
-        "ZAM0074 - Tetris/menu_window", // Window title
-        100,                            // Y coords
-        100,                            // X coords
-        800,                            // Default window width
-        600,                            // Default window height
-        SDL_WINDOW_FULLSCREEN_DESKTOP   // Show window right after creation
-    );
-    if (!menu_window)
-    {
-        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-    // If Creation Failed, return 1
-
-    // Create SDL Renderer
-    SDL_Renderer *renderer = SDL_CreateRenderer(
-        window,
-        -1,
-        SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
-    );
-
-    // If Creation Failed, return 1
-    if (!renderer)
-    {
-        SDL_DestroyWindow(window);
-        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    SDL_Renderer *menu_renderer = SDL_CreateRenderer(
-        menu_window,
-        -1,
-        SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
-    );
-
-    // If Creation Failed, return 1
-    if (!menu_renderer)
-    {
-        SDL_DestroyWindow(window);
-        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
     if (select_window == MENU)
     {
+        SDL_Window *menu_window = SDL_CreateWindow(
+            "ZAM0074 - Tetris/menu_window", // Window title
+            100,                            // Y coords
+            100,                            // X coords
+            800,                            // Default window width
+            600,                            // Default window height
+            SDL_WINDOW_FULLSCREEN_DESKTOP   // Show window right after creation
+        );
+        // If Creation Failed, return 1
+        if (!menu_window)
+        {
+            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+            SDL_Quit();
+            return 1;
+        }
+        SDL_Renderer *menu_renderer = SDL_CreateRenderer(
+            menu_window,
+            -1,
+            SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
+        );
+        // If Creation Failed, return 1
+        if (!menu_renderer)
+        {
+            SDL_DestroyWindow(menu_window);
+            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+            SDL_Quit();
+            return 1;
+        }
         SDL_GetWindowSize(menu_window, &window_width, &window_height); // Get window width and height
         main_menu(menu_renderer, window_width, window_height);
         SDL_DestroyRenderer(menu_renderer);
@@ -99,10 +62,42 @@ int game_window()
     }
     if (select_window == GAME)
     {
-        SDL_GetWindowSize(window, &window_width, &window_height); // Get window width and height
-        game_infinite_loop(renderer, window_width, window_height);
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
+        // Create SDL Window
+        SDL_Window *game_window = SDL_CreateWindow(
+            "ZAM0074 - Tetris/game_window", // Window title
+            100,                            // Y coords
+            100,                            // X coords
+            1920,                           // Default window width
+            1080,                           // Default window height
+            // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
+            // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
+            SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
+        );
+        if (!game_window)
+        {
+            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+            SDL_Quit();
+            return 1;
+        }
+        // Create SDL Renderer
+        SDL_Renderer *game_renderer = SDL_CreateRenderer(
+            game_window,
+            -1,
+            SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
+        );
+
+        // If Creation Failed, return 1
+        if (!game_renderer)
+        {
+            SDL_DestroyWindow(game_window);
+            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+            SDL_Quit();
+            return 1;
+        }
+        SDL_GetWindowSize(game_window, &window_width, &window_height); // Get window width and height
+        game_infinite_loop(game_renderer, window_width, window_height);
+        SDL_DestroyRenderer(game_renderer);
+        SDL_DestroyWindow(game_window);
     }
 
     TTF_Quit();
@@ -684,7 +679,9 @@ void update_best_scores(int score)
                 fprintf(f, "%d\n", score);
                 score_added = true;
                 i--; // so you could add the current score into the file too
-            } else {
+            }
+            else
+            {
                 fprintf(f, "%d\n", scores[ii]);
             }
         }
