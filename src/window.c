@@ -646,16 +646,22 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
             SDL_PollEvent(&e);
         } while (e.type != SDL_QUIT);
     }
-    update_best_scores(score);
-    printf("score has been updated\n");
+    if (update_best_scores(score))
+    {
+        printf("score has been updated\n");
+    }
+    else
+    {
+        printf("could not update score\n");
+    }
 };
 
-void update_best_scores(int score)
+int update_best_scores(int score)
 {
     char row[SETTINGS_ROW_SIZE];
     int scores[BEST_SCORE_NUM], i = 0;
     bool score_added = false;
-    FILE *f = fopen(SCORE_FILE, "a");
+    FILE *f = fopen(SCORE_FILE, "r");
     if (f)
     {
         while (fgets(row, sizeof(row), f))
@@ -665,28 +671,43 @@ void update_best_scores(int score)
         }
         fclose(f);
     }
-    f = fopen(SCORE_FILE, "w");
-    for (int ii = 0; ii < i && ii < BEST_SCORE_NUM; ii++)
+    else
     {
-        if (scores[ii] > score)
+        printf("file does not exist\n");
+    }
+    f = fopen(SCORE_FILE, "w");
+    if (!f)
+    {
+        printf("could not open file\n");
+        return 0;
+    }
+    if (i > 0)
+    {
+        for (int ii = 0; ii < i && ii < BEST_SCORE_NUM; ii++)
         {
-            fprintf(f, "%d\n", scores[ii]);
-        }
-        else
-        {
-            if (!score_added)
-            {
-                fprintf(f, "%d\n", score);
-                score_added = true;
-                i--; // so you could add the current score into the file too
-            }
-            else
+            if (scores[ii] > score)
             {
                 fprintf(f, "%d\n", scores[ii]);
             }
+            else
+            {
+                if (!score_added)
+                {
+                    fprintf(f, "%d\n", score);
+                    score_added = true;
+                    ii--; // so you could add the current score into the file too
+                }
+                else
+                {
+                    fprintf(f, "%d\n", scores[ii]);
+                }
+            }
         }
+    } else {
+        fprintf(f, "%d\n", score);
     }
     fclose(f);
+    return 1;
 }
 
 void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])

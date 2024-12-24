@@ -21,7 +21,7 @@ void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH]);
 int game_window();                  // returns 1 on error
 int get_settings(TMovement *binds); // Returns 0 on error
 char get_sdl_name(char *name);
-void update_best_scores(int score);
+int update_best_scores(int score);
 /* === End window.c Functions === */
 
 #endif
