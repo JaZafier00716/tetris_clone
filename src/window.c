@@ -1,8 +1,8 @@
 #include "window.h"
 
-int game_window()
+int window_select()
 {
-    int select_window = GAME;
+    int select_window = MENU;
     int window_width,
         window_height;
 
@@ -24,85 +24,94 @@ int game_window()
         fprintf(stderr, "IMG_Init Error: %s\n", IMG_GetError());
         return 1;
     }
-
-    if (select_window == MENU)
+    do
     {
-        SDL_Window *menu_window = SDL_CreateWindow(
-            "ZAM0074 - Tetris/menu_window", // Window title
-            100,                            // Y coords
-            100,                            // X coords
-            800,                            // Default window width
-            600,                            // Default window height
-            SDL_WINDOW_FULLSCREEN_DESKTOP   // Show window right after creation
-        );
-        // If Creation Failed, return 1
-        if (!menu_window)
+        if (select_window == MENU)
         {
-            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-            SDL_Quit();
-            return 1;
-        }
-        SDL_Renderer *menu_renderer = SDL_CreateRenderer(
-            menu_window,
-            -1,
-            SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
-        );
-        // If Creation Failed, return 1
-        if (!menu_renderer)
-        {
+            SDL_Window *menu_window = SDL_CreateWindow(
+                "ZAM0074 - Tetris/menu_window", // Window title
+                100,                            // Y coords
+                100,                            // X coords
+                800,                            // Default window width
+                300,                            // Default window height
+                SDL_WINDOW_SHOWN            // Show window right after creation
+            );
+            // If Creation Failed, return 1
+            if (!menu_window)
+            {
+                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+                TTF_Quit();
+                IMG_Quit();
+                SDL_Quit();
+                return 1;
+            }
+            SDL_Renderer *menu_renderer = SDL_CreateRenderer(
+                menu_window,
+                -1,
+                SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
+            );
+            // If Creation Failed, return 1
+            if (!menu_renderer)
+            {
+                SDL_DestroyWindow(menu_window);
+                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+                TTF_Quit();
+                IMG_Quit();
+                SDL_Quit();
+                return 1;
+            }
+            SDL_GetWindowSize(menu_window, &window_width, &window_height); // Get window width and height
+            select_window = main_menu(menu_renderer, window_width, window_height);
+            SDL_DestroyRenderer(menu_renderer);
             SDL_DestroyWindow(menu_window);
-            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-            SDL_Quit();
-            return 1;
         }
-        SDL_GetWindowSize(menu_window, &window_width, &window_height); // Get window width and height
-        main_menu(menu_renderer, window_width, window_height);
-        SDL_DestroyRenderer(menu_renderer);
-        SDL_DestroyWindow(menu_window);
-    }
-    if (select_window == GAME)
-    {
-        // Create SDL Window
-        SDL_Window *game_window = SDL_CreateWindow(
-            "ZAM0074 - Tetris/game_window", // Window title
-            100,                            // Y coords
-            100,                            // X coords
-            1920,                           // Default window width
-            1080,                           // Default window height
-            // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
-            // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
-            SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
-        );
-        if (!game_window)
+        if (select_window == GAME)
         {
-            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-            SDL_Quit();
-            return 1;
-        }
-        // Create SDL Renderer
-        SDL_Renderer *game_renderer = SDL_CreateRenderer(
-            game_window,
-            -1,
-            SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
-        );
+            // Create SDL Window
+            SDL_Window *game_window = SDL_CreateWindow(
+                "ZAM0074 - Tetris/game_window", // Window title
+                100,                            // Y coords
+                100,                            // X coords
+                1920,                           // Default window width
+                1080,                           // Default window height
+                // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
+                // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
+                SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
+            );
+            if (!game_window)
+            {
+                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+                SDL_Quit();
+                return 1;
+            }
+            // Create SDL Renderer
+            SDL_Renderer *game_renderer = SDL_CreateRenderer(
+                game_window,
+                -1,
+                SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
+            );
 
-        // If Creation Failed, return 1
-        if (!game_renderer)
-        {
+            // If Creation Failed, return 1
+            if (!game_renderer)
+            {
+                SDL_DestroyWindow(game_window);
+                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+                SDL_Quit();
+                return 1;
+            }
+            SDL_GetWindowSize(game_window, &window_width, &window_height); // Get window width and height
+            do
+            {
+                select_window = game_infinite_loop(game_renderer, window_width, window_height);
+            } while (select_window == GAME);
+            SDL_DestroyRenderer(game_renderer);
             SDL_DestroyWindow(game_window);
-            fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-            SDL_Quit();
-            return 1;
         }
-        SDL_GetWindowSize(game_window, &window_width, &window_height); // Get window width and height
-        game_infinite_loop(game_renderer, window_width, window_height);
-        SDL_DestroyRenderer(game_renderer);
-        SDL_DestroyWindow(game_window);
-    }
+    } while (select_window == GAME || select_window == MENU);
 
     TTF_Quit();
     SDL_Quit();
-
+    IMG_Quit();
     return 0;
 }
 
@@ -113,9 +122,147 @@ int SDL_rand(int max)
 
 int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
 {
-    // Render "Start game" button and return game
-    // Render "Settings button" and return settings
-    // Render "High score" box
+    SDL_FRect best_scores = {
+        .x = 2 * SPACING_WIDTH,
+        .y = 2 * SPACING_WIDTH,
+        .w = (window_width - 6 * SPACING_WIDTH) / 3,
+        .h = window_height - 4 * SPACING_WIDTH};
+    SDL_FPoint start_button = {
+        .x = window_width,
+        .y = (window_height-TITLE_SIZE-4*SPACING_WIDTH)/2};
+
+    TTF_Font *title_font = TTF_OpenFont(FONT, 48);
+    if (!title_font)
+    {
+        fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
+        return -1;
+    }
+    TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
+    if (!data_font)
+    {
+        fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
+        TTF_CloseFont(title_font);
+        return -1;
+    }
+    char row[SETTINGS_ROW_SIZE];
+    int text_num = 0;
+
+    char **best_scores_text = malloc(sizeof(char *) * BEST_SCORE_NUM);
+    for (int i = 0; i < BEST_SCORE_NUM; i++)
+    {
+        best_scores_text[i] = malloc(SETTINGS_ROW_SIZE);
+    }
+
+    char **binds_texts = malloc(sizeof(char*) * (WORD_SIZE*2+2));
+    // TMovement move;
+    TMovement move = {
+        .move_down.bind[0] = move_down,
+        .move_down.sdl_name = move_down,
+        .move_left.bind[0] = move_left,
+        .move_left.sdl_name = move_left,
+        .move_right.bind[0] = move_right,
+        .move_right.sdl_name = move_right,
+        .move_hold.bind[0] = move_hold,
+        .move_hold.sdl_name = move_hold,
+        .rotate_right.bind[0] = rotate_right,
+        .rotate_right.sdl_name = rotate_right,
+        .rotate_left.bind[0] = rotate_left,
+        .rotate_left.sdl_name = rotate_left};
+
+    if (!get_settings(&move))
+    {
+        fprintf(stderr, "Failed to open config file", SDL_GetError());
+        TTF_CloseFont(title_font);
+        TTF_CloseFont(data_font);
+        return -1;
+    }
+
+
+
+    FILE *f = fopen(SCORE_FILE, "r");
+    if (!f)
+    {
+        printf("could not open file");
+        strcpy(best_scores_text[0], NO_SCORE);
+        text_num = 1;
+    }
+    else
+    {
+        while (fgets(row, sizeof(row), f))
+        {
+            row[strcspn(row, "\n")] = '\0';
+            strcpy(best_scores_text[text_num], row);
+            text_num++;
+            if (text_num >= BEST_SCORE_NUM)
+            {
+                break;
+            }
+        }
+        fclose(f);
+    }
+    SDL_Event e;
+    bool running = 1;
+    while (running)
+    {
+        draw_title_texts(renderer, best_scores, title_font, data_font, text_num, BEST_SCORES, best_scores_text);
+        SDL_FRect start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
+        if (start_button_pos.h == -1)
+        {
+            SDL_FRect retry = draw_button(renderer, start_button, blue, white, title_font, MAIN_MENU); // draw main menu button
+            if (retry.h == -1)
+            {
+                printf("could not draw button\n");
+                for (int i = 0; i < text_num; i++)
+                {
+                    free(best_scores_text[i]);
+                }
+                free(best_scores_text);
+                TTF_CloseFont(title_font);
+                TTF_CloseFont(data_font);
+                return -1;
+            }
+            else
+            {
+                start_button_pos = retry;
+            }
+        }
+        SDL_RenderPresent(renderer);
+        while (SDL_PollEvent(&e))
+        {
+            switch (e.type)
+            {
+            case SDL_QUIT:
+                running = 0;
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                if (e.button.button == SDL_BUTTON_LEFT)
+                {
+                    // check if start had been pressed
+                    if (e.button.x >= start_button_pos.x && e.button.x <= (start_button_pos.x + start_button_pos.w) && e.button.y >= start_button_pos.y && e.button.y <= (start_button_pos.y + start_button_pos.h))
+                    {
+                        printf("start button clicked\n");
+                        for (int i = 0; i < text_num; i++)
+                        {
+                            free(best_scores_text[i]);
+                        }
+                        free(best_scores_text);
+                        TTF_CloseFont(title_font);
+                        TTF_CloseFont(data_font);
+                        return GAME; // return to main menu
+                    }
+                }
+                break;
+            }
+        }
+    }
+    for (int i = 0; i < text_num; i++)
+    {
+        free(best_scores_text[i]);
+    }
+    free(best_scores_text);
+    TTF_CloseFont(title_font);
+    TTF_CloseFont(data_font);
+    return -1;
 }
 
 int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
@@ -174,6 +321,12 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
         .x = 0,
         .y = (window_height - TITLE_SIZE) / 2,
     };
+    SDL_FPoint main_menu_button = {
+        .x = window_width,
+        .y = game_over_box.y + game_over_box.h + SPACING_WIDTH * 2};
+    SDL_FPoint restart_button = {
+        .x = window_width,
+        .y = main_menu_button.y + TITLE_SIZE + 2 * SPACING_WIDTH};
     SDL_FPoint game_field_pos = {
         .x = matrice_box.x,
         .y = matrice_box.y,
@@ -198,6 +351,7 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
     if (!data_font)
     {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
+        TTF_CloseFont(title_font);
         return -1;
     }
 
@@ -237,15 +391,6 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
     int rand_x_position = SDL_rand(6) + 1;
 
     // Movement variables
-    enum
-    {
-        move_left = 'a',
-        move_right = 'd',
-        move_down = 's',
-        move_hold = 'c',
-        rotate_right = 'O',
-        rotate_left = 'P'
-    };
 
     // TMovement move;
     TMovement move = {
@@ -265,6 +410,8 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
     if (!get_settings(&move))
     {
         fprintf(stderr, "Failed to open config file", SDL_GetError());
+        TTF_CloseFont(title_font);
+        TTF_CloseFont(data_font);
         return -1;
     }
 
@@ -632,20 +779,72 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
         draw_icon(renderer, sound_img_box, VOLUME_ON);                                             // Sound Icon
         if (game_over)
         {
-            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true); // Game Over text
+            int clicked = 0;
+            draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true);                             // Game Over text
+            SDL_FRect main_button_pos = draw_button(renderer, main_menu_button, blue, white, title_font, MAIN_MENU); // draw main menu button
+            if (main_button_pos.h == -1)
+            {
+                SDL_FRect retry = draw_button(renderer, main_menu_button, blue, white, title_font, MAIN_MENU); // draw main menu button
+                if (retry.h == -1)
+                {
+                    printf("could not draw button\n");
+                    TTF_CloseFont(title_font);
+                    TTF_CloseFont(data_font);
+                    return -1;
+                }
+                else
+                {
+                    main_button_pos = retry;
+                }
+            }
+            SDL_FRect restart_button_pos = draw_button(renderer, restart_button, green, white, title_font, RESTART); // draw restart button
+            if (main_button_pos.h == -1)
+            {
+                SDL_FRect retry = draw_button(renderer, restart_button, green, white, title_font, RESTART); // draw restart button
+                if (retry.h == -1)
+                {
+                    printf("could not draw button\n");
+                    TTF_CloseFont(title_font);
+                    TTF_CloseFont(data_font);
+                    return -1;
+                }
+                else
+                {
+                    restart_button_pos = retry;
+                }
+            }
+
+            SDL_RenderPresent(renderer);
+            while (1) // while the button was not clicked or while there are more events, continue the loop
+            {
+                if (SDL_PollEvent(&e) && e.button.button == SDL_BUTTON_LEFT && e.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    // return to main menu
+                    if (e.button.x >= main_button_pos.x && e.button.x <= (main_button_pos.x + main_button_pos.w) && e.button.y >= main_button_pos.y && e.button.y <= (main_button_pos.y + main_button_pos.h))
+                    {
+                        printf("main menu button clicked\n");
+                        TTF_CloseFont(title_font);
+                        TTF_CloseFont(data_font);
+                        return MENU; // return to main menu
+                    }
+                    // restart
+                    if (e.button.x >= restart_button_pos.x && e.button.x <= (restart_button_pos.x + restart_button_pos.w) && e.button.y >= restart_button_pos.y && e.button.y <= (restart_button_pos.y + restart_button_pos.h))
+                    {
+                        printf("restart button clicked\n");
+                        TTF_CloseFont(title_font);
+                        TTF_CloseFont(data_font);
+                        return GAME; // return to main menu
+                    }
+                }
+            }
         }
-        SDL_RenderPresent(renderer);
+        else
+        {
+            SDL_RenderPresent(renderer);
+        }
     }
     TTF_CloseFont(title_font);
     TTF_CloseFont(data_font);
-    if (game_over)
-    {
-        // return display for choosing between restart, menu and settings and based on that return target window
-        do
-        {
-            SDL_PollEvent(&e);
-        } while (e.type != SDL_QUIT);
-    }
     if (update_best_scores(score))
     {
         printf("score has been updated\n");
@@ -703,7 +902,9 @@ int update_best_scores(int score)
                 }
             }
         }
-    } else {
+    }
+    else
+    {
         fprintf(f, "%d\n", score);
     }
     fclose(f);

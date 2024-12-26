@@ -49,6 +49,11 @@
 #define SCORE_TEXT "SCORE"
 #define LINES_TEXT "LINES"
 #define LEVEL_TEXT "LEVEL"
+#define MAIN_MENU "MAIN MENU"
+#define RESTART "RESTART"
+#define NO_SCORE "NO BEST SCORES"
+#define BEST_SCORES "BEST SCORES"
+#define START "START"
 /* === End Define Texts ===*/
 
 /* === Start Define Common Structures === */

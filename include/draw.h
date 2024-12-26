@@ -10,7 +10,7 @@
 
 /* === Start draw.c Functions === */
 void draw_background(SDL_Renderer *renderer, SDL_Color color);
-void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color);
+void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color, int width, int height);
 void draw_playing_field(SDL_Renderer *renderer, int matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_FPoint pos);
 void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, TObject object);
 void draw_color_palette(SDL_Renderer *renderer);
@@ -21,6 +21,8 @@ int draw_icon(SDL_Renderer *renderer, SDL_FRect rect, char *file_path);
 int draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font, SDL_Color color, bool center); // renders text either on left or on center
 void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color);
 void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText texts[], int texts_num, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color);
+SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, char *button_text); // returns whether a button had been clicked
+void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, char *title, char **texts);
 /* === End draw.c Functions === */
 
 

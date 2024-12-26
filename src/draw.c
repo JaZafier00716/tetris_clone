@@ -57,13 +57,13 @@ void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect bo
             pos.x = j * (SQUARE_SIZE + SPACING_WIDTH) + (0.5 * inner.w + inner.x) - 0.5 * (object.w * SQUARE_SIZE + (object.w - 1) * SPACING_WIDTH);
             if (object.matrice[i][j] == 1)
             {
-                draw_rectangle(renderer, pos, *object.color);
+                draw_rectangle(renderer, pos, *object.color, SQUARE_SIZE, SQUARE_SIZE);
             }
         }
     }
 }
 
-void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color)
+void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color, int width, int height)
 {
     SDL_SetRenderDrawColor(
         renderer,
@@ -72,7 +72,7 @@ void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color)
         color.secondary.b,
         color.secondary.a);
 
-    const SDL_FRect square1_1 = {move.x, move.y, SQUARE_SIZE, SQUARE_SIZE};
+    const SDL_FRect square1_1 = {move.x, move.y, width, height};
     SDL_RenderFillRectF(
         renderer,
         &square1_1);
@@ -84,7 +84,7 @@ void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color)
         color.primary.b,
         color.primary.a);
 
-    const SDL_FRect square1_2 = {move.x, move.y, SQUARE_SIZE - SHADE_WIDTH, SQUARE_SIZE - SHADE_WIDTH};
+    const SDL_FRect square1_2 = {move.x, move.y, width - SHADE_WIDTH, height - SHADE_WIDTH};
     SDL_RenderFillRectF(
         renderer,
         &square1_2);
@@ -104,11 +104,11 @@ void draw_playing_field(SDL_Renderer *renderer, int matrice[FIELD_HEIGHT][FIELD_
                 if (j == 0 || j == FIELD_WIDTH - 1 || i == 0 || i == FIELD_HEIGHT - 1)
                 {
 
-                    draw_rectangle(renderer, square_pos, dark);
+                    draw_rectangle(renderer, square_pos, dark, SQUARE_SIZE, SQUARE_SIZE);
                 }
                 else
                 {
-                    draw_rectangle(renderer, square_pos, light);
+                    draw_rectangle(renderer, square_pos, light, SQUARE_SIZE, SQUARE_SIZE);
                 }
             }
         }
@@ -130,7 +130,7 @@ void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, TObject obje
             square_pos.x = offset.x + (j + object.pos.x) * (SQUARE_SIZE + SPACING_WIDTH);
             if (object.matrice[i][j])
             {
-                draw_rectangle(renderer, square_pos, *object.color);
+                draw_rectangle(renderer, square_pos, *object.color, SQUARE_SIZE, SQUARE_SIZE);
             }
         }
     }
@@ -139,7 +139,7 @@ void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, TObject obje
 void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_font, TDataText text[], int text_num, SDL_FRect rect)
 {
     SDL_FRect outer = {
-        .h = rect.h * text_num - SPACING_WIDTH*2 * text_num,
+        .h = rect.h * text_num - SPACING_WIDTH * 2 * text_num,
         .w = rect.w,
         .x = rect.x,
         .y = rect.y - (TITLE_SIZE + TEXT_SIZE) * text_num - SPACING_WIDTH};
@@ -306,4 +306,65 @@ void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText text
         draw_icon_text(renderer, bind_rect, texts[i], font, long_text_font, color);
         ypos += bind_rect.h + SPACING_WIDTH;
     }
+}
+
+SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, char *button_text)
+{
+    SDL_Surface *surface = TTF_RenderText_Solid(font, button_text, text_color);
+    if (!surface)
+    {
+        SDL_FRect error = {
+            -1, -1, -1, -1};
+        fprintf(stderr, "TTF_RenderText_Solid Error: %s\n", TTF_GetError());
+        return error;
+    }
+    pos.x = 0.5 * (pos.x - (surface->w + 2 * SPACING_WIDTH));
+    SDL_FRect button = {
+        .h = surface->h,
+        .w = surface->w + 4 * SPACING_WIDTH,
+        .x = pos.x,
+        .y = pos.y};
+    draw_rectangle(renderer, pos, button_color, button.w, button.h);
+    draw_text(renderer, button, button_text, font, text_color, true);
+    return button;
+}
+
+void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, char *title, char **texts)
+{
+    SDL_FRect start_pos = {
+        .x = rect.x,
+        .h = TITLE_SIZE,
+        .w = rect.w,
+        .y = rect.y};
+    draw_text(renderer, start_pos, title, title_font, white, true); // draw title
+    start_pos.h = TEXT_SIZE;
+    start_pos.y = 4*SPACING_WIDTH;
+    for (int i = 0; i < texts_num; i++)
+    {
+        start_pos.y += start_pos.h;
+        SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
+        SDL_RenderDrawRectF(renderer, &start_pos);
+        start_pos.y += SPACING_WIDTH;
+        draw_text(renderer, start_pos, texts[i], texts_font, white, false);
+    }
+}
+
+void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, TMovement *texts)
+{
+    SDL_FRect start_pos = {
+        .x = rect.x,
+        .h = TITLE_SIZE,
+        .w = rect.w,
+        .y = rect.y};
+    draw_text(renderer, start_pos, title, title_font, white, true); // draw title
+    start_pos.h = TEXT_SIZE;
+    start_pos.y = 4*SPACING_WIDTH;
+
+        start_pos.y += start_pos.h;
+        SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
+        SDL_RenderDrawRectF(renderer, &start_pos);
+        start_pos.y += SPACING_WIDTH;
+        draw_text(renderer, start_pos, texts->move_down.name, texts_font, white, false);
+        draw_text(renderer, start_pos, texts->move_down.name, texts_font, white, false);
+    
 }
