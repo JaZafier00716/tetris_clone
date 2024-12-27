@@ -23,6 +23,7 @@ void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_
 void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText texts[], int texts_num, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color);
 SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, char *button_text); // returns whether a button had been clicked
 void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, char *title, char **texts);
+void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, int text_num);
 /* === End draw.c Functions === */
 
 

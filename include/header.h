@@ -54,6 +54,8 @@
 #define NO_SCORE "NO BEST SCORES"
 #define BEST_SCORES "BEST SCORES"
 #define START "START"
+#define CONFIG "SETTINGS"
+#define EDIT "EDIT"
 /* === End Define Texts ===*/
 
 /* === Start Define Common Structures === */

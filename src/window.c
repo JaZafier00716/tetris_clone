@@ -33,8 +33,8 @@ int window_select()
                 100,                            // Y coords
                 100,                            // X coords
                 800,                            // Default window width
-                300,                            // Default window height
-                SDL_WINDOW_SHOWN            // Show window right after creation
+                600,                            // Default window height
+                SDL_WINDOW_SHOWN                // Show window right after creation
             );
             // If Creation Failed, return 1
             if (!menu_window)
@@ -129,7 +129,12 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         .h = window_height - 4 * SPACING_WIDTH};
     SDL_FPoint start_button = {
         .x = window_width,
-        .y = (window_height-TITLE_SIZE-4*SPACING_WIDTH)/2};
+        .y = (window_height - TITLE_SIZE - 4 * SPACING_WIDTH) / 2};
+    SDL_FRect config_box = {
+        .x = (window_width - 6 * SPACING_WIDTH)*2/3,
+        .y = 2 * SPACING_WIDTH,
+        .w = window_width-2*SPACING_WIDTH-(window_width - 6 * SPACING_WIDTH)*2/3,
+        .h = window_height - 4 * SPACING_WIDTH};
 
     TTF_Font *title_font = TTF_OpenFont(FONT, 48);
     if (!title_font)
@@ -148,12 +153,73 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
     int text_num = 0;
 
     char **best_scores_text = malloc(sizeof(char *) * BEST_SCORE_NUM);
+    if (!best_scores_text)
+    {
+        printf("Could not allocate memory\n");
+        TTF_CloseFont(title_font);
+        TTF_CloseFont(data_font);
+        return -1;
+    }
     for (int i = 0; i < BEST_SCORE_NUM; i++)
     {
         best_scores_text[i] = malloc(SETTINGS_ROW_SIZE);
+        if (!best_scores_text[i])
+        {
+            printf("Could not allocate memory\n");
+            for (int j = 0; j < i; j++)
+            {
+                free(best_scores_text[j]);
+                best_scores_text[j] = NULL;
+            }
+            free(best_scores_text);
+            best_scores_text = NULL;
+            TTF_CloseFont(title_font);
+            TTF_CloseFont(data_font);
+            return -1;
+        }
     }
 
-    char **binds_texts = malloc(sizeof(char*) * (WORD_SIZE*2+2));
+    char **binds_texts = malloc(sizeof(char*)*BINDS_NUM);
+    if (!binds_texts)
+    {
+        printf("Could not allocate memory\n");
+        for (int i = 0; i < text_num; i++)
+        {
+            free(best_scores_text[i]);
+            best_scores_text[i] = NULL;
+        }
+        free(best_scores_text);
+        best_scores_text = NULL;
+        TTF_CloseFont(title_font);
+        TTF_CloseFont(data_font);
+        return -1;
+    }
+    for (int i = 0; i < BINDS_NUM; i++)
+    {
+        binds_texts[i] = malloc(WORD_SIZE * 2 + 2);
+        if (!binds_texts[i])
+        {
+            printf("Could not allocate memory\n");
+            for (int j = 0; j < text_num; j++)
+            {
+                free(best_scores_text[j]);
+                best_scores_text[j] = NULL;
+            }
+            free(best_scores_text);
+            best_scores_text = NULL;
+            for (int j = 0; j < i; j++)
+            {
+                free(binds_texts[j]);
+                binds_texts[j] = NULL;
+            }
+            free(binds_texts);
+            binds_texts = NULL;
+            TTF_CloseFont(title_font);
+            TTF_CloseFont(data_font);
+            return -1;
+        }
+    }
+
     // TMovement move;
     TMovement move = {
         .move_down.bind[0] = move_down,
@@ -168,16 +234,34 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         .rotate_right.sdl_name = rotate_right,
         .rotate_left.bind[0] = rotate_left,
         .rotate_left.sdl_name = rotate_left};
-
     if (!get_settings(&move))
     {
         fprintf(stderr, "Failed to open config file", SDL_GetError());
+        for (int j = 0; j < text_num; j++)
+        {
+            free(best_scores_text[j]);
+            best_scores_text[j] = NULL;
+        }
+        free(best_scores_text);
+        best_scores_text = NULL;
+        for (int j = 0; j < BINDS_NUM; j++)
+        {
+            free(binds_texts[j]);
+            binds_texts[j] = NULL;
+        }
+        free(binds_texts);
+        binds_texts = NULL;
         TTF_CloseFont(title_font);
         TTF_CloseFont(data_font);
         return -1;
     }
 
-
+    sprintf(binds_texts[0], "%s: %s\0", move.move_down.name, move.move_down.bind);
+    sprintf(binds_texts[1], "%s: %s\0", move.move_left.name, move.move_left.bind);
+    sprintf(binds_texts[2], "%s: %s\0", move.move_right.name, move.move_right.bind);
+    sprintf(binds_texts[3], "%s: %s\0", move.move_hold.name, move.move_hold.bind);
+    sprintf(binds_texts[4], "%s: %s\0", move.rotate_right.name, move.rotate_right.bind);
+    sprintf(binds_texts[5], "%s: %s\0", move.rotate_left.name, move.rotate_left.bind);
 
     FILE *f = fopen(SCORE_FILE, "r");
     if (!f)
@@ -212,11 +296,20 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
             if (retry.h == -1)
             {
                 printf("could not draw button\n");
-                for (int i = 0; i < text_num; i++)
+                for (int j = 0; j < text_num; j++)
                 {
-                    free(best_scores_text[i]);
+                    free(best_scores_text[j]);
+                    best_scores_text[j] = NULL;
                 }
                 free(best_scores_text);
+                best_scores_text = NULL;
+                for (int j = 0; j < BINDS_NUM; j++)
+                {
+                    free(binds_texts[j]);
+                    binds_texts[j] = NULL;
+                }
+                free(binds_texts);
+                binds_texts = NULL;
                 TTF_CloseFont(title_font);
                 TTF_CloseFont(data_font);
                 return -1;
@@ -226,6 +319,7 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
                 start_button_pos = retry;
             }
         }
+        draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, BINDS_NUM);
         SDL_RenderPresent(renderer);
         while (SDL_PollEvent(&e))
         {
@@ -241,11 +335,20 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
                     if (e.button.x >= start_button_pos.x && e.button.x <= (start_button_pos.x + start_button_pos.w) && e.button.y >= start_button_pos.y && e.button.y <= (start_button_pos.y + start_button_pos.h))
                     {
                         printf("start button clicked\n");
-                        for (int i = 0; i < text_num; i++)
+                        for (int j = 0; j < text_num; j++)
                         {
-                            free(best_scores_text[i]);
+                            free(best_scores_text[j]);
+                            best_scores_text[j] = NULL;
                         }
                         free(best_scores_text);
+                        best_scores_text = NULL;
+                        for (int j = 0; j < BINDS_NUM; j++)
+                        {
+                            free(binds_texts[j]);
+                            binds_texts[j] = NULL;
+                        }
+                        free(binds_texts);
+                        binds_texts = NULL;
                         TTF_CloseFont(title_font);
                         TTF_CloseFont(data_font);
                         return GAME; // return to main menu
@@ -255,11 +358,20 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
             }
         }
     }
-    for (int i = 0; i < text_num; i++)
+    for (int j = 0; j < text_num; j++)
     {
-        free(best_scores_text[i]);
+        free(best_scores_text[j]);
+        best_scores_text[j] = NULL;
     }
     free(best_scores_text);
+    best_scores_text = NULL;
+    for (int j = 0; j < BINDS_NUM; j++)
+    {
+        free(binds_texts[j]);
+        binds_texts[j] = NULL;
+    }
+    free(binds_texts);
+    binds_texts = NULL;
     TTF_CloseFont(title_font);
     TTF_CloseFont(data_font);
     return -1;
@@ -1004,7 +1116,6 @@ int get_settings(TMovement *binds)
         }
         if (strcmp("rotate_left", name) == 0)
         {
-            printf("true");
             SDL_strlcpy(binds->rotate_left.name, name, sizeof(binds->move_left.name));
             SDL_strlcpy(binds->rotate_left.bind, normalized_bind, sizeof(normalized_bind));
             binds->rotate_left.sdl_name = sdl_bind;

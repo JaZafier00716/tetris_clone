@@ -338,7 +338,7 @@ void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_fo
         .y = rect.y};
     draw_text(renderer, start_pos, title, title_font, white, true); // draw title
     start_pos.h = TEXT_SIZE;
-    start_pos.y = 4*SPACING_WIDTH;
+    start_pos.y = 4 * SPACING_WIDTH;
     for (int i = 0; i < texts_num; i++)
     {
         start_pos.y += start_pos.h;
@@ -349,22 +349,51 @@ void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_fo
     }
 }
 
-void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, TMovement *texts)
+void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, int text_num)
 {
     SDL_FRect start_pos = {
         .x = rect.x,
         .h = TITLE_SIZE,
         .w = rect.w,
         .y = rect.y};
+    SDL_FPoint button_pos = {
+        .x = (rect.x + rect.w) * 1.885,
+        .y = start_pos.y};
     draw_text(renderer, start_pos, title, title_font, white, true); // draw title
     start_pos.h = TEXT_SIZE;
-    start_pos.y = 4*SPACING_WIDTH;
-
+    start_pos.y = 4 * SPACING_WIDTH;
+    float prev_size;
+    for (int i = 0; i < text_num-1; i++)
+    {
         start_pos.y += start_pos.h;
-        SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
-        SDL_RenderDrawRectF(renderer, &start_pos);
-        start_pos.y += SPACING_WIDTH;
-        draw_text(renderer, start_pos, texts->move_down.name, texts_font, white, false);
-        draw_text(renderer, start_pos, texts->move_down.name, texts_font, white, false);
-    
+        button_pos.y = start_pos.y;
+        if (strlen(texts[i]) > 13)
+        {
+            prev_size = start_pos.h;
+            start_pos.h *= 2;
+            start_pos.h += SPACING_WIDTH;
+            SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
+            SDL_RenderDrawRectF(renderer, &start_pos);
+            // start_pos.h = prev_size;
+
+            start_pos.y += SPACING_WIDTH;
+            draw_text(renderer, start_pos, strtok(texts[i], " "), texts_font, white, false);
+
+            start_pos.y += start_pos.h;
+            draw_text(renderer, start_pos, strtok(NULL, " "), texts_font, white, false);
+            start_pos.y += SPACING_WIDTH;
+
+            button_pos.y += start_pos.h - 2 * SPACING_WIDTH;
+            draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
+        }
+        else
+        {
+            SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
+            SDL_RenderDrawRectF(renderer, &start_pos);
+            start_pos.y += SPACING_WIDTH;
+            button_pos.y += SPACING_WIDTH * 2 / 3;
+            draw_text(renderer, start_pos, texts[i], texts_font, white, false);
+            draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
+        }
+    }
 }
