@@ -7,6 +7,9 @@ build/
 *.a
 *.so
 *.exe
+best_score.txt
+draw.backup.txt
+score.txt
 
 # Ignore editor/IDE-specific files
 .vscode/
