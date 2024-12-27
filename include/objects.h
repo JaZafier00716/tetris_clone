@@ -14,12 +14,18 @@ enum direction
 
 typedef struct {
   char name[WORD_SIZE];
-  char bind;
+  char bind[WORD_SIZE];
+  char sdl_name;
 }TBinds;
 
 typedef struct {
   TBinds move_left,move_right, move_down, move_hold, rotate_left, rotate_right;
 }TMovement;
+
+typedef struct {
+  TBinds text;
+  char *icon_path;
+}TIconText;
 
 typedef struct
 {

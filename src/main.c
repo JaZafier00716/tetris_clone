@@ -2,7 +2,7 @@
 
 int main() {
     srand(time(NULL));
-    game_window();
+    window_select();
 
     return 0;
 }
