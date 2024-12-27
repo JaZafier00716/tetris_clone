@@ -40,6 +40,8 @@
 #define VOLUME_MUTE "../public/icons/volume_mute.png"
 #define VOLUME_ON "../public/icons/volume_on.png"
 #define FONT "../data/fonts/ProggyCleanNerdFontMono-Regular.ttf"
+#define CFG_FILE "../data/cfg/user.cfg"
+#define TMP_FILE "../data/cfg/tmp.cfg"
 /* === End Define asset paths === */
 
 /* === Start Define Texts ===*/
@@ -49,6 +51,14 @@
 #define SCORE_TEXT "SCORE"
 #define LINES_TEXT "LINES"
 #define LEVEL_TEXT "LEVEL"
+#define MAIN_MENU "MAIN MENU"
+#define RESTART "RESTART"
+#define NO_SCORE "NO BEST SCORES"
+#define BEST_SCORES "BEST SCORES"
+#define START "START"
+#define CONFIG "SETTINGS"
+#define EDIT "EDIT"
+#define NEW_BIND "PRESS NEW KEY"
 /* === End Define Texts ===*/
 
 /* === Start Define Common Structures === */
@@ -68,6 +78,12 @@ typedef struct {
   char *title;
   char *data;
 }TDataText;
+
+typedef struct {
+  SDL_FRect button_pos;
+  char *button_name;
+}TConfigButton;
 /* === End Define Common Structures === */
+
 
 #endif

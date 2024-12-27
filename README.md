@@ -43,14 +43,17 @@ Ensure that you have the following tools installed:
 ### Step-by-Step Compilation Instructions
 
 1. **Navigate to the project's build directory**:
-    \`
-    #cd tetris/build
-    \`
+   - #\`
+     mkdir -p build
+     \`#
+   - #\`
+     cd tetris/build
+     \`#
 
-2. **Run the build command**:
-    \`
-    #cmake .. && make && ./tetris
-    \`
+3. **Run the build command**:
+    #\`
+    cmake .. && make && ./tetris
+    \`#
 
    This command will:
    - Run \`cmake ..\` to configure the build process.
