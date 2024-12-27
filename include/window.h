@@ -23,6 +23,7 @@ enum
   rotate_left = 'P'
 };
 
+
 /* === Start window.c Functions === */
 int SDL_rand(int max);                                                               // returns random number  <0,max>
 int main_menu(SDL_Renderer *renderer, int window_width, int window_height);          // returns Next window that should be displayed, otherwise returns -1

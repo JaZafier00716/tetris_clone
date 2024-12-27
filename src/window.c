@@ -131,9 +131,9 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         .x = window_width,
         .y = (window_height - TITLE_SIZE - 4 * SPACING_WIDTH) / 2};
     SDL_FRect config_box = {
-        .x = (window_width - 6 * SPACING_WIDTH)*2/3,
+        .x = (window_width - 6 * SPACING_WIDTH) * 2 / 3,
         .y = 2 * SPACING_WIDTH,
-        .w = window_width-2*SPACING_WIDTH-(window_width - 6 * SPACING_WIDTH)*2/3,
+        .w = window_width - 2 * SPACING_WIDTH - (window_width - 6 * SPACING_WIDTH) * 2 / 3,
         .h = window_height - 4 * SPACING_WIDTH};
 
     TTF_Font *title_font = TTF_OpenFont(FONT, 48);
@@ -179,7 +179,7 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         }
     }
 
-    char **binds_texts = malloc(sizeof(char*)*BINDS_NUM);
+    char **binds_texts = malloc(sizeof(char *) * BINDS_NUM);
     if (!binds_texts)
     {
         printf("Could not allocate memory\n");
@@ -284,49 +284,55 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         }
         fclose(f);
     }
+
+    TConfigButton config_buttons[BINDS_NUM];
+    // Render Main menu
+    draw_title_texts(renderer, best_scores, title_font, data_font, text_num, BEST_SCORES, best_scores_text);
+    SDL_FRect start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
+    if (start_button_pos.h == -1)
+    {
+        SDL_FRect retry = draw_button(renderer, start_button, blue, white, title_font, MAIN_MENU); // draw main menu button
+        if (retry.h == -1)
+        {
+            printf("could not draw button\n");
+            for (int j = 0; j < text_num; j++)
+            {
+                free(best_scores_text[j]);
+                best_scores_text[j] = NULL;
+            }
+            free(best_scores_text);
+            best_scores_text = NULL;
+            for (int j = 0; j < BINDS_NUM; j++)
+            {
+                free(binds_texts[j]);
+                binds_texts[j] = NULL;
+            }
+            free(binds_texts);
+            binds_texts = NULL;
+            TTF_CloseFont(title_font);
+            TTF_CloseFont(data_font);
+            return -1;
+        }
+        else
+        {
+            start_button_pos = retry;
+        }
+    }
+    draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, config_buttons, BINDS_NUM);
+    SDL_Delay(200);
+    SDL_RenderPresent(renderer);
+
     SDL_Event e;
-    bool running = 1;
+    bool running = true;
     while (running)
     {
-        draw_title_texts(renderer, best_scores, title_font, data_font, text_num, BEST_SCORES, best_scores_text);
-        SDL_FRect start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
-        if (start_button_pos.h == -1)
+        if (SDL_PollEvent(&e))
         {
-            SDL_FRect retry = draw_button(renderer, start_button, blue, white, title_font, MAIN_MENU); // draw main menu button
-            if (retry.h == -1)
-            {
-                printf("could not draw button\n");
-                for (int j = 0; j < text_num; j++)
-                {
-                    free(best_scores_text[j]);
-                    best_scores_text[j] = NULL;
-                }
-                free(best_scores_text);
-                best_scores_text = NULL;
-                for (int j = 0; j < BINDS_NUM; j++)
-                {
-                    free(binds_texts[j]);
-                    binds_texts[j] = NULL;
-                }
-                free(binds_texts);
-                binds_texts = NULL;
-                TTF_CloseFont(title_font);
-                TTF_CloseFont(data_font);
-                return -1;
-            }
-            else
-            {
-                start_button_pos = retry;
-            }
-        }
-        draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, BINDS_NUM);
-        SDL_RenderPresent(renderer);
-        while (SDL_PollEvent(&e))
-        {
+
             switch (e.type)
             {
             case SDL_QUIT:
-                running = 0;
+                running = false;
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 if (e.button.button == SDL_BUTTON_LEFT)
@@ -352,6 +358,14 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
                         TTF_CloseFont(title_font);
                         TTF_CloseFont(data_font);
                         return GAME; // return to main menu
+                    }
+                    for (int i = 0; i < BINDS_NUM; i++)
+                    {
+                        if ((float)e.button.x >= config_buttons[i].button_pos.x && (float)e.button.x <= (config_buttons[i].button_pos.x + config_buttons[i].button_pos.w) && (float)e.button.y >= config_buttons[i].button_pos.y && (float)e.button.y <= (config_buttons[i].button_pos.y + config_buttons[i].button_pos.h))
+                        {
+                            // Open Bind window that returns new character in SDL format for config, or returns original character
+                            printf("pressed edit: %s\n", config_buttons[i].button_name);
+                        }
                     }
                 }
                 break;

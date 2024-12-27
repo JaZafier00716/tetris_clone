@@ -349,7 +349,7 @@ void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_fo
     }
 }
 
-void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, int text_num)
+void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, TConfigButton *config_buttons, int text_num)
 {
     SDL_FRect start_pos = {
         .x = rect.x,
@@ -363,7 +363,7 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
     start_pos.h = TEXT_SIZE;
     start_pos.y = 4 * SPACING_WIDTH;
     float prev_size;
-    for (int i = 0; i < text_num-1; i++)
+    for (int i = 0; i < text_num; i++)
     {
         start_pos.y += start_pos.h;
         button_pos.y = start_pos.y;
@@ -374,17 +374,18 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
             start_pos.h += SPACING_WIDTH;
             SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
             SDL_RenderDrawRectF(renderer, &start_pos);
-            // start_pos.h = prev_size;
+            start_pos.h = prev_size;
 
             start_pos.y += SPACING_WIDTH;
-            draw_text(renderer, start_pos, strtok(texts[i], " "), texts_font, white, false);
-
+            char *name = strtok(texts[i], " ");
+            char *bind = strtok(NULL, "\0");
+            draw_text(renderer, start_pos, name, texts_font, white, false);
             start_pos.y += start_pos.h;
-            draw_text(renderer, start_pos, strtok(NULL, " "), texts_font, white, false);
+
+            draw_text(renderer, start_pos, bind, texts_font, white, false);
             start_pos.y += SPACING_WIDTH;
 
             button_pos.y += start_pos.h - 2 * SPACING_WIDTH;
-            draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
         }
         else
         {
@@ -393,7 +394,8 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
             start_pos.y += SPACING_WIDTH;
             button_pos.y += SPACING_WIDTH * 2 / 3;
             draw_text(renderer, start_pos, texts[i], texts_font, white, false);
-            draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
         }
+        config_buttons[i].button_pos = draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
+        config_buttons[i].button_name = strtok(texts[i], ":");
     }
 }

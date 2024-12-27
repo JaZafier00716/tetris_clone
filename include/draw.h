@@ -5,9 +5,6 @@
 #include "colors.h"
 
 
-// TODO: Create separate function for drawing text in draw text box
-// TODO: Create a function that draws Icon and text next to each other
-
 /* === Start draw.c Functions === */
 void draw_background(SDL_Renderer *renderer, SDL_Color color);
 void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color, int width, int height);
@@ -23,7 +20,7 @@ void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_
 void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText texts[], int texts_num, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color);
 SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, char *button_text); // returns whether a button had been clicked
 void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, char *title, char **texts);
-void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, int text_num);
+void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, TConfigButton *config_buttons, int text_num);
 /* === End draw.c Functions === */
 
 

@@ -75,6 +75,11 @@ typedef struct {
   char *title;
   char *data;
 }TDataText;
+
+typedef struct {
+  SDL_FRect button_pos;
+  char *button_name;
+}TConfigButton;
 /* === End Define Common Structures === */
 
 #endif
