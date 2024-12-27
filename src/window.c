@@ -136,6 +136,11 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         .w = window_width - 2 * SPACING_WIDTH - (window_width - 6 * SPACING_WIDTH) * 2 / 3,
         .h = window_height - 4 * SPACING_WIDTH};
 
+    SDL_FRect edit_block = {
+        .x = (window_width - 4 * SQUARE_SIZE) / 2,
+        .y = (window_height - 2 * TITLE_SIZE) / 2,
+        .h = 2 * TEXT_SIZE + SQUARE_SIZE,
+        .w = 6 * SQUARE_SIZE};
     TTF_Font *title_font = TTF_OpenFont(FONT, 48);
     if (!title_font)
     {
@@ -319,16 +324,52 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         }
     }
     draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, config_buttons, BINDS_NUM);
-    SDL_Delay(200);
     SDL_RenderPresent(renderer);
 
+    SDL_FRect edit_buttons[2];
+
+    char new_bind[WORD_SIZE] = "";
     SDL_Event e;
+    char edited_key[WORD_SIZE];
+    bool editing = false;
     bool running = true;
     while (running)
     {
-        if (SDL_PollEvent(&e))
+        draw_background(renderer, black);
+        draw_title_texts(renderer, best_scores, title_font, data_font, text_num, BEST_SCORES, best_scores_text);
+        SDL_FRect start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
+        if (start_button_pos.h == -1)
         {
-
+            SDL_FRect retry = draw_button(renderer, start_button, blue, white, title_font, MAIN_MENU); // draw main menu button
+            if (retry.h == -1)
+            {
+                printf("could not draw button\n");
+                for (int j = 0; j < text_num; j++)
+                {
+                    free(best_scores_text[j]);
+                    best_scores_text[j] = NULL;
+                }
+                free(best_scores_text);
+                best_scores_text = NULL;
+                for (int j = 0; j < BINDS_NUM; j++)
+                {
+                    free(binds_texts[j]);
+                    binds_texts[j] = NULL;
+                }
+                free(binds_texts);
+                binds_texts = NULL;
+                TTF_CloseFont(title_font);
+                TTF_CloseFont(data_font);
+                return -1;
+            }
+            else
+            {
+                start_button_pos = retry;
+            }
+        }
+        draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, config_buttons, BINDS_NUM);
+        while (SDL_PollEvent(&e))
+        {
             switch (e.type)
             {
             case SDL_QUIT:
@@ -359,18 +400,56 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
                         TTF_CloseFont(data_font);
                         return GAME; // return to main menu
                     }
+                    // Editing window buttons
+                    if (editing)
+                    {
+                        if (strlen(new_bind) > 0)
+                        {
+                            if (e.button.x >= edit_buttons[0].x && e.button.x <= (edit_buttons[0].x + edit_buttons[0].w) && e.button.y >= edit_buttons[0].y && e.button.y <= (edit_buttons[0].y + edit_buttons[0].h))
+                            {
+                                // check uniqueness
+                                // update bind
+                            }
+                        }
+                        // Cancel button
+                        if (e.button.x >= edit_buttons[1].x && e.button.x <= (edit_buttons[1].x + edit_buttons[1].w) && e.button.y >= edit_buttons[1].y && e.button.y <= (edit_buttons[1].y + edit_buttons[1].h))
+                        {
+                            memset(new_bind, '\0', sizeof(new_bind));
+                            editing = 0;
+                        }
+                        if (e.button.x < edit_block.x || e.button.x > (edit_block.x + edit_block.w) || e.button.y < edit_block.y || e.button.y > (edit_block.y + edit_block.h))
+                        {
+                            memset(new_bind, '\0', sizeof(new_bind));
+                            editing = 0;
+                        }
+                    }
+                    // Edit Config buttons
                     for (int i = 0; i < BINDS_NUM; i++)
                     {
-                        if ((float)e.button.x >= config_buttons[i].button_pos.x && (float)e.button.x <= (config_buttons[i].button_pos.x + config_buttons[i].button_pos.w) && (float)e.button.y >= config_buttons[i].button_pos.y && (float)e.button.y <= (config_buttons[i].button_pos.y + config_buttons[i].button_pos.h))
+                        if (e.button.x >= config_buttons[i].button_pos.x && e.button.x <= (config_buttons[i].button_pos.x + config_buttons[i].button_pos.w) && e.button.y >= config_buttons[i].button_pos.y && e.button.y <= (config_buttons[i].button_pos.y + config_buttons[i].button_pos.h))
                         {
-                            // Open Bind window that returns new character in SDL format for config, or returns original character
-                            printf("pressed edit: %s\n", config_buttons[i].button_name);
+                            editing = true;
+                            strcpy(edited_key, config_buttons[i].button_name);
+                            printf("pressed edit: %s\n", edited_key);
+                            break;
                         }
                     }
                 }
                 break;
+            case SDL_KEYDOWN:
+                if (editing)
+                {
+                    get_sdl_name(e.key.keysym.sym, new_bind);
+                    printf("new bind: %s\n", new_bind);
+                }
+                break;
             }
         }
+        if (editing)
+        {
+            draw_edit_block(renderer, edit_block, title_font, data_font, NEW_BIND, new_bind, edit_buttons);
+        }
+        SDL_RenderPresent(renderer);
     }
     for (int j = 0; j < text_num; j++)
     {
@@ -1089,9 +1168,10 @@ int get_settings(TMovement *binds)
                 j--;
                 continue;
             }
-            normalized_bind[j] = bind[i];
+            sdl_bind = bind[i];
+            break;
         }
-        sdl_bind = get_sdl_name(normalized_bind);
+        get_sdl_name(sdl_bind, normalized_bind);
         if (strcmp("move_left", name) == 0)
         {
             SDL_strlcpy(binds->move_left.name, name, sizeof(binds->move_left.name));
@@ -1141,32 +1221,32 @@ int get_settings(TMovement *binds)
     return 1;
 }
 
-char get_sdl_name(char *name)
+void get_sdl_name(char name, char *normalized_name)
 {
-    for (int i = 0; i < (int)strlen(name); i++)
+    if (name == 'P')
     {
-        tolower(name[i]);
+        strcpy(normalized_name, "arrow_left");
+        return;
     }
-
-    if (strcmp(name, "arrow_left") == 0)
+    if (name == 'O')
     {
-        return 'P';
+        strcpy(normalized_name, "arrow_right");
+        return;
     }
-    if (strcmp(name, "arrow_right") == 0)
+    if (name == 'R')
     {
-        return 'O';
+        strcpy(normalized_name, "arrow_up");
+        return;
     }
-    if (strcmp(name, "arrow_up") == 0)
+    if (name == 'Q')
     {
-        return 'R';
+        strcpy(normalized_name, "arrow_down");
+        return;
     }
-    if (strcmp(name, "arrow_down") == 0)
+    if (name == ' ')
     {
-        return 'Q';
+        strcpy(normalized_name, "space");
+        return;
     }
-    if (strcmp(name, "space") == 0)
-    {
-        return ' ';
-    }
-    return name[0];
+    sprintf(normalized_name, "%c\0", name);
 }

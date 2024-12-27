@@ -56,6 +56,7 @@
 #define START "START"
 #define CONFIG "SETTINGS"
 #define EDIT "EDIT"
+#define NEW_BIND "PRESS NEW KEY"
 /* === End Define Texts ===*/
 
 /* === Start Define Common Structures === */
@@ -81,5 +82,6 @@ typedef struct {
   char *button_name;
 }TConfigButton;
 /* === End Define Common Structures === */
+
 
 #endif

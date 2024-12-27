@@ -4,7 +4,6 @@
 #include "objects.h"
 #include "colors.h"
 
-
 /* === Start draw.c Functions === */
 void draw_background(SDL_Renderer *renderer, SDL_Color color);
 void draw_rectangle(SDL_Renderer *renderer, SDL_FPoint move, TColor color, int width, int height);
@@ -21,7 +20,7 @@ void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText text
 SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, char *button_text); // returns whether a button had been clicked
 void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, char *title, char **texts);
 void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, TConfigButton *config_buttons, int text_num);
+void draw_edit_block(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *data_font, char *title_text, char *pressed_key, SDL_FRect *buttons);
 /* === End draw.c Functions === */
-
 
 #endif

@@ -359,17 +359,24 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
     SDL_FPoint button_pos = {
         .x = (rect.x + rect.w) * 1.885,
         .y = start_pos.y};
-    draw_text(renderer, start_pos, title, title_font, white, true); // draw title
+
+    draw_text(renderer, start_pos, title, title_font, white, true); // Draw title
     start_pos.h = TEXT_SIZE;
     start_pos.y = 4 * SPACING_WIDTH;
-    float prev_size;
+
+    char temp_text[SETTINGS_ROW_SIZE];
     for (int i = 0; i < text_num; i++)
     {
+        memset(temp_text, '\0', SETTINGS_ROW_SIZE);
         start_pos.y += start_pos.h;
         button_pos.y = start_pos.y;
-        if (strlen(texts[i]) > 13)
+
+        strcpy(temp_text, texts[i]);
+        temp_text[sizeof(temp_text) - 1] = '\0';
+
+        if (strlen(temp_text) > 13)
         {
-            prev_size = start_pos.h;
+            float prev_size = start_pos.h;
             start_pos.h *= 2;
             start_pos.h += SPACING_WIDTH;
             SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
@@ -377,8 +384,10 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
             start_pos.h = prev_size;
 
             start_pos.y += SPACING_WIDTH;
-            char *name = strtok(texts[i], " ");
+
+            char *name = strtok(temp_text, " ");
             char *bind = strtok(NULL, "\0");
+
             draw_text(renderer, start_pos, name, texts_font, white, false);
             start_pos.y += start_pos.h;
 
@@ -393,9 +402,48 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
             SDL_RenderDrawRectF(renderer, &start_pos);
             start_pos.y += SPACING_WIDTH;
             button_pos.y += SPACING_WIDTH * 2 / 3;
-            draw_text(renderer, start_pos, texts[i], texts_font, white, false);
+
+            draw_text(renderer, start_pos, temp_text, texts_font, white, false);
         }
+        char *button_name = strtok(temp_text, ":");
+        config_buttons[i].button_name = strdup(button_name);
         config_buttons[i].button_pos = draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
-        config_buttons[i].button_name = strtok(texts[i], ":");
     }
+}
+
+void draw_edit_block(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *data_font, char *title_text, char *pressed_key, SDL_FRect *buttons)
+{
+    SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
+    SDL_RenderFillRectF(renderer, &rect);
+    SDL_FRect text = {
+        .x = rect.x,
+        .y = rect.y + SPACING_WIDTH,
+        .h = TEXT_SIZE,
+        .w = rect.w};
+
+    SDL_FRect new_bind_text = {
+        .x = rect.x,
+        .y = rect.y + TITLE_SIZE / 2,
+        .h = TEXT_SIZE,
+        .w = rect.w};
+
+    SDL_FPoint submit_button = {
+        .x = rect.x + rect.w * 1.8,
+        .y = new_bind_text.y + new_bind_text.h + 2 * SPACING_WIDTH,
+    };
+    SDL_FPoint cancel_button = {
+        .x = rect.x + rect.w * 2.8,
+        .y = new_bind_text.y + new_bind_text.h + 2 * SPACING_WIDTH,
+    };
+    draw_text(renderer, text, title_text, data_font, white, true);
+
+    char press_text[WORD_SIZE * 2];
+    if (strcmp(pressed_key, "") != 0)
+    {
+        sprintf(press_text, "pressed: %s", pressed_key);
+        draw_text(renderer, new_bind_text, press_text, data_font, light.primary, true);
+    }
+
+    buttons[0] = draw_button(renderer, submit_button, green, white, data_font, "SUBMIT");
+    buttons[1] = draw_button(renderer, cancel_button, red, white, data_font, "CANCEL");
 }

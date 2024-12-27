@@ -31,7 +31,7 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
 void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH]);
 int window_select();                // returns 1 on error
 int get_settings(TMovement *binds); // Returns 0 on error
-char get_sdl_name(char *name);
+void get_sdl_name(char name, char *normalized_name);
 int update_best_scores(int score);
 /* === End window.c Functions === */
 
