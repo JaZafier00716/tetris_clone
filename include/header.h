@@ -40,6 +40,8 @@
 #define VOLUME_MUTE "../public/icons/volume_mute.png"
 #define VOLUME_ON "../public/icons/volume_on.png"
 #define FONT "../data/fonts/ProggyCleanNerdFontMono-Regular.ttf"
+#define CFG_FILE "../data/cfg/user.cfg"
+#define TMP_FILE "../data/cfg/tmp.cfg"
 /* === End Define asset paths === */
 
 /* === Start Define Texts ===*/

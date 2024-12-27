@@ -428,11 +428,11 @@ void draw_edit_block(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_fon
         .w = rect.w};
 
     SDL_FPoint submit_button = {
-        .x = rect.x + rect.w * 1.8,
+        .x = rect.x + rect.w,
         .y = new_bind_text.y + new_bind_text.h + 2 * SPACING_WIDTH,
     };
     SDL_FPoint cancel_button = {
-        .x = rect.x + rect.w * 2.8,
+        .x = rect.x + rect.w*2,
         .y = new_bind_text.y + new_bind_text.h + 2 * SPACING_WIDTH,
     };
     draw_text(renderer, text, title_text, data_font, white, true);

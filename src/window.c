@@ -137,10 +137,10 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         .h = window_height - 4 * SPACING_WIDTH};
 
     SDL_FRect edit_block = {
-        .x = (window_width - 4 * SQUARE_SIZE) / 2,
-        .y = (window_height - 2 * TITLE_SIZE) / 2,
+        .x = (window_width - 10 * SQUARE_SIZE) / 2,
+        .y = (window_height - (2 * TITLE_SIZE + SQUARE_SIZE)) / 2,
         .h = 2 * TEXT_SIZE + SQUARE_SIZE,
-        .w = 6 * SQUARE_SIZE};
+        .w = 10 * SQUARE_SIZE};
     TTF_Font *title_font = TTF_OpenFont(FONT, 48);
     if (!title_font)
     {
@@ -407,8 +407,37 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
                         {
                             if (e.button.x >= edit_buttons[0].x && e.button.x <= (edit_buttons[0].x + edit_buttons[0].w) && e.button.y >= edit_buttons[0].y && e.button.y <= (edit_buttons[0].y + edit_buttons[0].h))
                             {
-                                // check uniqueness
                                 // update bind
+                                update_settings(new_bind, edited_key);
+                                if (!get_settings(&move))
+                                {
+                                    fprintf(stderr, "Failed to open config file", SDL_GetError());
+                                    for (int j = 0; j < text_num; j++)
+                                    {
+                                        free(best_scores_text[j]);
+                                        best_scores_text[j] = NULL;
+                                    }
+                                    free(best_scores_text);
+                                    best_scores_text = NULL;
+                                    for (int j = 0; j < BINDS_NUM; j++)
+                                    {
+                                        free(binds_texts[j]);
+                                        binds_texts[j] = NULL;
+                                    }
+                                    free(binds_texts);
+                                    binds_texts = NULL;
+                                    TTF_CloseFont(title_font);
+                                    TTF_CloseFont(data_font);
+                                    return -1;
+                                }
+                                sprintf(binds_texts[0], "%s: %s\0", move.move_down.name, move.move_down.bind);
+                                sprintf(binds_texts[1], "%s: %s\0", move.move_left.name, move.move_left.bind);
+                                sprintf(binds_texts[2], "%s: %s\0", move.move_right.name, move.move_right.bind);
+                                sprintf(binds_texts[3], "%s: %s\0", move.move_hold.name, move.move_hold.bind);
+                                sprintf(binds_texts[4], "%s: %s\0", move.rotate_right.name, move.rotate_right.bind);
+                                sprintf(binds_texts[5], "%s: %s\0", move.rotate_left.name, move.rotate_left.bind);
+                                printf("config updated\n");
+                                editing = false;
                             }
                         }
                         // Cancel button
@@ -439,7 +468,7 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
             case SDL_KEYDOWN:
                 if (editing)
                 {
-                    get_sdl_name(e.key.keysym.sym, new_bind);
+                    get_normalized_name(e.key.keysym.sym, new_bind);
                     printf("new bind: %s\n", new_bind);
                 }
                 break;
@@ -1141,7 +1170,7 @@ int get_settings(TMovement *binds)
     char row[SETTINGS_ROW_SIZE];
     char *name, *bind, sdl_bind;
     char normalized_bind[WORD_SIZE];
-    f = fopen("../data/cfg/user.cfg", "r");
+    f = fopen(CFG_FILE, "r");
     if (!f)
     {
         return 0;
@@ -1171,7 +1200,7 @@ int get_settings(TMovement *binds)
             sdl_bind = bind[i];
             break;
         }
-        get_sdl_name(sdl_bind, normalized_bind);
+        get_normalized_name(sdl_bind, normalized_bind);
         if (strcmp("move_left", name) == 0)
         {
             SDL_strlcpy(binds->move_left.name, name, sizeof(binds->move_left.name));
@@ -1221,7 +1250,91 @@ int get_settings(TMovement *binds)
     return 1;
 }
 
-void get_sdl_name(char name, char *normalized_name)
+void update_settings(char *new_bind, char *movement)
+{
+    FILE *fi = fopen(CFG_FILE, "r");
+    FILE *fo = fopen(TMP_FILE, "w");
+    char row[SETTINGS_ROW_SIZE];
+    char normalized_bind[WORD_SIZE];
+    char *name, *bind, *comments;
+    char sdl_bind;
+    bool updated = false;
+    while (fgets(row, SETTINGS_ROW_SIZE, fi))
+    {
+        memset(normalized_bind, '\0', WORD_SIZE);
+        name = strtok(row, ":");
+        if (!name)
+        {
+            continue;
+        }
+        bind = strtok(NULL, ";");
+        if (!bind)
+        {
+            continue;
+        }
+        comments = strtok(NULL, "\n"); // Skip comments
+
+        for (int i = 0, j = 0; i < (int)strlen(bind); i++, j++)
+        {
+            if (bind[i] == ' ')
+            {
+                j--;
+                continue;
+            }
+            sdl_bind = bind[i];
+            break;
+        }
+
+        if (strcmp(name, movement) == 0)
+        {
+            updated = true;
+            sdl_bind = get_sdl_name(new_bind);
+            printf("update:%c to %s\n", sdl_bind, new_bind);
+            if (comments)
+            {
+                fprintf(fo, "%s: %c; %s\n", movement, sdl_bind, comments);
+                // printf("%s: %c; %s\n", movement, sdl_bind, comments);
+            }
+            else
+            {
+                fprintf(fo, "%s: %c;\n", movement, sdl_bind);
+                // printf("%s: %c;\n", movement, sdl_bind);
+            }
+        }
+        else
+        {
+            if (comments)
+            {
+                fprintf(fo, "%s: %c; %s\n", name, sdl_bind, comments);
+                // printf("%s: %c; %s\n", name, sdl_bind, comments);
+            }
+            else
+            {
+                fprintf(fo, "%s: %c;\n", name, sdl_bind);
+                // printf("%s: %c;\n", name, sdl_bind);
+            }
+        }
+    }
+    if (!updated)
+    {
+        sdl_bind = get_sdl_name(new_bind);
+        fprintf(fo, "%s: %c;\n", movement, sdl_bind);
+    }
+
+    fclose(fi);
+    fclose(fo);
+
+    if (remove(CFG_FILE) != 0)
+    {
+        perror("Error deleting original configuration file");
+    }
+    if (rename(TMP_FILE, CFG_FILE) != 0)
+    {
+        perror("Error renaming temporary file to configuration file");
+    }
+}
+
+void get_normalized_name(char name, char *normalized_name)
 {
     if (name == 'P')
     {
@@ -1249,4 +1362,29 @@ void get_sdl_name(char name, char *normalized_name)
         return;
     }
     sprintf(normalized_name, "%c\0", name);
+}
+
+char get_sdl_name(char *normalized_name)
+{
+    if (strcmp(normalized_name, "arrow_left") == 0)
+    {
+        return 'P';
+    }
+    if (strcmp(normalized_name, "arrow_right") == 0)
+    {
+        return 'O';
+    }
+    if (strcmp(normalized_name, "arrow_up") == 0)
+    {
+        return 'R';
+    }
+    if (strcmp(normalized_name, "arrow_down") == 0)
+    {
+        return 'Q';
+    }
+    if (strcmp(normalized_name, "space") == 0)
+    {
+        return ' ';
+    }
+    return normalized_name[0];
 }
