@@ -1009,7 +1009,7 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
         draw_object_matrice(renderer, game_field_pos, object);                                     // Object
         draw_object_box(renderer, light.secondary, next_box, next, NEXT_BOX_TEXT, title_font);     // Next object box
         draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white); // Binds box
-        draw_icon(renderer, cog_img_box, COG);                                                     // Settings Icon
+        draw_icon(renderer, cog_img_box, PAUSE);                                                   // Pause Icon
         draw_icon(renderer, sound_img_box, VOLUME_ON);                                             // Sound Icon
         if (game_over)
         {
