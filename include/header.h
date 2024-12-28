@@ -54,6 +54,7 @@
 #define LEVEL_TEXT "LEVEL"
 #define MAIN_MENU "MAIN MENU"
 #define RESTART "RESTART"
+#define RESUME "RESUME"
 #define NO_SCORE "NO BEST SCORES"
 #define BEST_SCORES "BEST SCORES"
 #define START "START"
