@@ -713,6 +713,14 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
             case SDL_QUIT:
                 running = false;
                 break;
+            case SDL_MOUSEBUTTONDOWN:
+                if (e.button.x >= cog_img_box.x && e.button.x <= (cog_img_box.x + cog_img_box.w) && e.button.y >= cog_img_box.y && e.button.y <= (cog_img_box.y + cog_img_box.h))
+                {
+                    paused = true;
+                    printf("paused\n");
+                    continue;
+                }
+                break;
             case SDL_KEYDOWN:
                 printf("%c\t%d\n", e.key.keysym.sym, e.key.keysym.sym);
                 if ((int)e.key.keysym.sym == SDLK_ESCAPE)
@@ -1020,8 +1028,15 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
         draw_object_matrice(renderer, game_field_pos, object);                                     // Object
         draw_object_box(renderer, light.secondary, next_box, next, NEXT_BOX_TEXT, title_font);     // Next object box
         draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white); // Binds box
-        draw_icon(renderer, cog_img_box, PAUSE);                                                   // Pause Icon
-        draw_icon(renderer, sound_img_box, VOLUME_ON);                                             // Sound Icon
+        if (paused)
+        {
+            draw_icon(renderer, cog_img_box, PLAY); // Play Icon
+        }
+        else
+        {
+            draw_icon(renderer, cog_img_box, PAUSE); // Pause Icon
+        }
+        // draw_icon(renderer, sound_img_box, VOLUME_ON);                                             // Sound Icon
         if (game_over || paused)
         {
             int clicked = 0;
@@ -1085,7 +1100,8 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
             SDL_RenderPresent(renderer);
             while (1) // while the button was not clicked or while there are more events, continue the loop
             {
-                if(paused && SDL_PollEvent(&e) && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) {
+                if (paused && SDL_PollEvent(&e) && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
+                {
                     paused = false;
                     printf("RESUMED\n");
                     break;
@@ -1094,9 +1110,16 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
                 {
                     if (paused)
                     {
-                        if (e.button.x >= resume_button_pos.x && e.button.x <= (resume_button_pos.x + resume_button_pos.w)
-                        && e.button.y >= resume_button_pos.y && e.button.y <= (resume_button_pos.y + resume_button_pos.h)) {
+                        if (e.button.x >= cog_img_box.x && e.button.x <= (cog_img_box.x + cog_img_box.w) && e.button.y >= cog_img_box.y && e.button.y <= (cog_img_box.y + cog_img_box.h))
+                        {
                             paused = false;
+                            printf("play\n");
+                            break;
+                        }
+                        if (e.button.x >= resume_button_pos.x && e.button.x <= (resume_button_pos.x + resume_button_pos.w) && e.button.y >= resume_button_pos.y && e.button.y <= (resume_button_pos.y + resume_button_pos.h))
+                        {
+                            paused = false;
+                            printf("play\n");
                             break;
                         }
                     }
@@ -1116,6 +1139,13 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
                         TTF_CloseFont(data_font);
                         return GAME; // return to main menu
                     }
+                }
+                if (SDL_PollEvent(&e) && e.type == SDL_QUIT)
+                {
+                    printf("QUIT\n");
+                    TTF_CloseFont(title_font);
+                    TTF_CloseFont(data_font);
+                    return -1;
                 }
             }
         }
