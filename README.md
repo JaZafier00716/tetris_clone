@@ -51,7 +51,7 @@ Ensure that you have the following tools installed:
      \`#
 
 3. **Run the build command**:
-    #\`
+    - #\`
     cmake .. && make && ./tetris
     \`#
 
