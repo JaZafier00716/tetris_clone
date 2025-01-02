@@ -1,4 +1,4 @@
-## Project Structure / How it works
+### Project Structure / How it works
 
 - **src/**: This is where all the source code (.c files) is located.
   - \`colors.c\`: This file contains all colors used in the project.
