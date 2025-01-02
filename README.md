@@ -1,15 +1,20 @@
-## Project Structure
+## Project Structure / How it works
 
 - **src/**: This is where all the source code (.c files) is located.
   - \`colors.c\`: This file contains all colors used in the project.
   - \`draw.c\`: This file is contains all drawing functions. 
-  - \`window.c\`: This file contains functions for individual windows.
   - \`main.c\`: This is the main file of the project.
   - \`movement.c\`: This file containts functions for object movement
   - \`objects.c\`: This file contains all object definitions
-  - \`images.c\`: This file contains all functions that work with images
+  - \`window.c\`: This file contains functions for individual windows.
 
-- **include/**: This folder contains header files. It includes \`header.h\` which is used for connection of source files.
+- **include/**: This folder contains header files (.h files).
+  - \`colors.h\`: This file contains all function declarations for colors.c file
+  - \`draw.h\`: This file contains all function declarations for draw.c file
+  - \`header.h\`: This file contains all function declarations for header.c file
+  - \`movement.h\`: This file contains all function declarations for movement.c file
+  - \`objects.h\`: This file contains all function declarations for objects.c file
+  - \`window.h\`: This file contains all function declarations for window.c file
 
 - **build/**: This is where the compiled project will be located. after compilation is finished just run \`./tetris\` to start the game. 
 
