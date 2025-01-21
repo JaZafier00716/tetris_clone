@@ -48,7 +48,7 @@ int window_select()
             SDL_Renderer *menu_renderer = SDL_CreateRenderer(
                 menu_window,
                 -1,
-                SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
+                SDL_RENDERER_ACCELERATED // SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
             );
             // If Creation Failed, return 1
             if (!menu_renderer)
@@ -945,7 +945,8 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
                             delay = 1;
                         }
                         level++;
-                        gravity_delay_ms = delay / 60 * 1000;
+                        gravity_delay_ms = ((float)delay / 60) * 1000;
+                        printf("new delay: %d\n", gravity_delay_ms);
                         level_cleared_lines = 0;
 
                         // Update Level
