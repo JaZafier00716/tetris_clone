@@ -1,4 +1,5 @@
-#include "draw.h"
+#include "../include/draw.h"
+#include <string.h>
 
 void draw_background(SDL_Renderer *renderer, SDL_Color color)
 {

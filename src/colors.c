@@ -1,4 +1,4 @@
-#include "colors.h"
+#include "../include/colors.h"
 
 SDL_Color black = {
     0,  // Red
