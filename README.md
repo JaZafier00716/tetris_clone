@@ -38,6 +38,14 @@ Default keys (change them in the SETTINGS box of the main menu, they are stored 
 | Left / Right arrow | rotate counter clockwise / clockwise |
 | C | hold the piece (once per piece) |
 | Esc or the pause icon | pause |
+| F11 | switch between fullscreen and a window |
+
+## Window size
+
+Both screens are drawn in a fixed design size (menu 800x600, game 1920x1080) that is scaled to the
+window with the aspect ratio kept, so any monitor or window size works (black bars fill the rest).
+The windows are resizable and start with the largest size that fits the desktop; the game starts
+fullscreen. Mouse clicks are mapped back to the design size by SDL.
 
 Scoring is the original Nintendo one (40 / 100 / 300 / 1200 points for 1 / 2 / 3 / 4 rows, times level + 1).
 The level goes up every 10 rows. The five best scores are kept in `data/best_score.txt`.
@@ -50,10 +58,11 @@ The level goes up every 10 rows. The five best scores are kept in `data/best_sco
     - `movement.c`: the playing field, collisions, wall kicks and clearing rows.
     - `game.c`: game state and rules (spawning, hold, gravity, locking, score, level).
     - `scores.c`: best score list stored in a text file.
+    - `layout.c`: design sizes and the window size that fits a desktop.
   - SDL part:
-    - `window.c`: windows, main menu, game screen and input handling.
+    - `window.c`: windows (scaling, fullscreen), main menu, game screen and input handling.
     - `draw.c`, `colors.c`: rendering helpers and colors.
     - `config.c`: key bindings and their config file.
     - `main.c`: entry point.
-- `tests/`: unit tests of the logic and of the key binding file, run by CTest (tiny harness in `tests/test.h`, no framework).
+- `tests/`: unit tests of the logic, the key binding file and the scaling to different window sizes (dummy video driver), run by CTest (tiny harness in `tests/test.h`, no framework).
 - `data/`: font and runtime config/score files. `public/`: icons.

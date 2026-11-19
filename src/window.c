@@ -3,21 +3,46 @@
 #include "colors.h"
 #include "config.h"
 #include "draw.h"
+#include "layout.h"
 
 static bool point_in_rect(float x, float y, SDL_FRect rect)
 {
     return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
 }
 
-// Creates a window with a renderer. Prefers a vsynced hardware renderer, falls back to software.
-static bool create_window(const char *title, int width, int height, Uint32 window_flags, SDL_Window **window, SDL_Renderer **renderer)
+// Size of the area of the desktop a window can use
+static void desktop_size(int *width, int *height)
 {
-    *window = SDL_CreateWindow(title, 100, 100, width, height, window_flags);
+    SDL_Rect area;
+    if (SDL_GetDisplayUsableBounds(0, &area) == 0 && area.w > 0 && area.h > 0)
+    {
+        *width = area.w;
+        *height = area.h;
+        return;
+    }
+    *width = 1280; // unknown desktop: assume something small
+    *height = 720;
+}
+
+// Creates a resizable window with a renderer. Everything is drawn in the design size
+// (design_width x design_height) and SDL scales it to the window, keeping the aspect ratio
+// (black bars) and mapping mouse positions back to design coordinates.
+// Prefers a vsynced hardware renderer, falls back to software.
+static bool create_window(const char *title, int design_width, int design_height, Uint32 extra_flags, SDL_Window **window, SDL_Renderer **renderer)
+{
+    int width, height, avail_width, avail_height;
+    desktop_size(&avail_width, &avail_height);
+    fit_window_size(design_width, design_height, avail_width, avail_height, &width, &height);
+
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear"); // smooth text when scaled down
+    *window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height,
+                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | extra_flags);
     if (!*window)
     {
         fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
         return false;
     }
+    SDL_SetWindowMinimumSize(*window, design_width / 4, design_height / 4);
     *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!*renderer)
     {
@@ -30,7 +55,17 @@ static bool create_window(const char *title, int width, int height, Uint32 windo
         *window = NULL;
         return false;
     }
+    SDL_RenderSetLogicalSize(*renderer, design_width, design_height);
+    SDL_RenderSetIntegerScale(*renderer, SDL_FALSE);
     return true;
+}
+
+// F11: switch between fullscreen and a window that fits the desktop
+static void toggle_fullscreen(SDL_Renderer *renderer)
+{
+    SDL_Window *window = SDL_RenderGetWindow(renderer);
+    bool fullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0;
+    SDL_SetWindowFullscreen(window, fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
 }
 
 int window_select(void)
@@ -60,28 +95,28 @@ int window_select(void)
     while (select_window == MENU || select_window == GAME)
     {
         const bool menu = select_window == MENU;
+        const int design_width = menu ? MENU_DESIGN_WIDTH : GAME_DESIGN_WIDTH;
+        const int design_height = menu ? MENU_DESIGN_HEIGHT : GAME_DESIGN_HEIGHT;
         SDL_Window *window;
         SDL_Renderer *renderer;
         if (!create_window(menu ? "ZAM0074 - Tetris/menu_window" : "ZAM0074 - Tetris/game_window",
-                           menu ? 800 : 1920, menu ? 600 : 1080,
-                           menu ? SDL_WINDOW_SHOWN : SDL_WINDOW_FULLSCREEN_DESKTOP,
+                           design_width, design_height,
+                           menu ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP,
                            &window, &renderer))
         {
             status = 1;
             break;
         }
-        int window_width, window_height;
-        SDL_GetWindowSize(window, &window_width, &window_height);
 
         if (menu)
         {
-            select_window = main_menu(renderer, window_width, window_height);
+            select_window = main_menu(renderer, design_width, design_height);
         }
         else
         {
             do // a restart plays again in the same window
             {
-                select_window = game_infinite_loop(renderer, window_width, window_height);
+                select_window = game_infinite_loop(renderer, design_width, design_height);
             } while (select_window == GAME);
         }
         SDL_DestroyRenderer(renderer);
@@ -245,7 +280,11 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
                 }
                 break;
             case SDL_KEYDOWN:
-                if (editing && e.key.keysym.sym == SDLK_ESCAPE)
+                if (e.key.keysym.sym == SDLK_F11)
+                {
+                    toggle_fullscreen(renderer); // F11 is reserved, it cannot be bound
+                }
+                else if (editing && e.key.keysym.sym == SDLK_ESCAPE)
                 {
                     editing = false; // escape is reserved for pausing the game
                 }
@@ -433,7 +472,11 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
             else if (e.type == SDL_KEYDOWN)
             {
                 const SDL_Keycode key = e.key.keysym.sym;
-                if (key == SDLK_ESCAPE)
+                if (key == SDLK_F11)
+                {
+                    toggle_fullscreen(renderer);
+                }
+                else if (key == SDLK_ESCAPE)
                 {
                     if (state != OVER)
                     {

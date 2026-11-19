@@ -26,7 +26,8 @@ add_library(tetris_logic STATIC
   src/objects.c
   src/movement.c
   src/game.c
-  src/scores.c)
+  src/scores.c
+  src/layout.c)
 target_include_directories(tetris_logic PUBLIC include)
 
 # The game itself: window, drawing and input
@@ -39,12 +40,14 @@ add_library(tetris_config STATIC src/config.c)
 target_include_directories(tetris_config PUBLIC include)
 target_link_libraries(tetris_config PUBLIC tetris_logic SDL2::SDL2 SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
 
+# Drawing helpers
+add_library(tetris_ui STATIC src/draw.c src/colors.c)
+target_link_libraries(tetris_ui PUBLIC tetris_config)
+
 add_executable(tetris
   src/main.c
-  src/window.c
-  src/draw.c
-  src/colors.c)
-target_link_libraries(tetris PRIVATE tetris_config)
+  src/window.c)
+target_link_libraries(tetris PRIVATE tetris_ui)
 # Assets (icons, font, config, scores) are found relative to the repository, whatever the working directory
 target_compile_definitions(tetris PRIVATE ASSET_DIR="${CMAKE_SOURCE_DIR}")
 
