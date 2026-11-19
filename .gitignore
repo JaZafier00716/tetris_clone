@@ -1,5 +1,5 @@
 # Ignore build directory
-build/
+build*/
 
 # Ignore other common build artifacts
 *.o
@@ -20,3 +20,5 @@ score.txt
 # Ignore system files
 .DS_Store
 Thumbs.db
+# Stray build output
+/main
