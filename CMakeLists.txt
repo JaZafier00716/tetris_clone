@@ -47,3 +47,6 @@ add_executable(tetris
 target_link_libraries(tetris PRIVATE tetris_config)
 # Assets (icons, font, config, scores) are found relative to the repository, whatever the working directory
 target_compile_definitions(tetris PRIVATE ASSET_DIR="${CMAKE_SOURCE_DIR}")
+
+enable_testing()
+add_subdirectory(tests)
