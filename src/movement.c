@@ -1,302 +1,143 @@
-#include "../include/movement.h"
+#include <stddef.h>
+#include "movement.h"
 
-void transpose(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE])
+static bool in_field(int x, int y)
 {
-  int new_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE];
-  for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
-  {
-    for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
-    {
-      new_matrice[i][j] = matrice[j][i];
-    }
-  }
-  memcpy(matrice, new_matrice, sizeof(new_matrice));
+  return x >= 0 && x < FIELD_WIDTH && y >= 0 && y < FIELD_HEIGHT;
 }
 
-void reverse(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE])
+void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
-  int new_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE];
-  for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
+  for (int i = 0; i < FIELD_HEIGHT; i++)
   {
-    for (int j = 0, jj = OBJECT_MATRICE_SIZE - 1; j < OBJECT_MATRICE_SIZE; j++, jj--)
+    for (int j = 0; j < FIELD_WIDTH; j++)
     {
-      new_matrice[i][j] = matrice[i][jj];
+      bool border = i == 0 || i == FIELD_HEIGHT - 1 || j == 0 || j == FIELD_WIDTH - 1;
+      matrice[i][j] = border ? 1 : 0;
     }
   }
-  memcpy(matrice, new_matrice, sizeof(new_matrice));
 }
 
-int object_collision_detection(TObject object, int matrice[FIELD_HEIGHT][FIELD_WIDTH])
+bool object_collision_detection(const TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
   for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
   {
     for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
     {
-      if (object.pos.y + i > FIELD_HEIGHT || object.pos.y + i < 0 || object.pos.x + j > FIELD_WIDTH || object.pos.x + j < 0)
+      if (!object->matrice[i][j])
       {
         continue;
       }
-      if (object.matrice[i][j] == 1 && matrice[i + object.pos.y][j + object.pos.x]) // +1 because of borders
+      int x = object->pos.x + j;
+      int y = object->pos.y + i;
+      if (!in_field(x, y) || matrice[y][x])
       {
-        //   printf("i:%d + y:%d : j:%d + x:%d\n", i, object.pos.y, j, object.pos.x);
-        return 1;
+        return true;
       }
     }
   }
-  return 0;
+  return false;
 }
 
-int try_move_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_Point new_pos)
+bool try_move_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], TPoint new_pos)
 {
-  TObject temp_object = *object;
-  temp_object.pos = new_pos;
+  TObject moved = *object;
+  moved.pos = new_pos;
 
-  if (!object_collision_detection(temp_object, matrice))
+  if (object_collision_detection(&moved, matrice))
   {
-    *object = temp_object;
-    return 1;
+    return false;
   }
-  return 0;
+  *object = moved;
+  return true;
 }
 
-int try_rotate_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation)
+bool try_rotate_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation)
 {
-  TObject temp_object = *object;
-  // int moved_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE] = {0};
-  int is_empty = true;
-  int num_empty = 0;
+  // Offsets tried in order when the rotated piece does not fit: in place, sideways, then up (off the floor)
+  static const TPoint kicks[] = {{0, 0}, {-1, 0}, {1, 0}, {-2, 0}, {2, 0}, {0, -1}};
+  TObject rotated = *object;
 
-  if (rotation == 1)
+  if (rotation > 0)
   {
-    rotate_CW(&temp_object);
+    rotate_CW(&rotated);
   }
   else
   {
-    rotate_CC(&temp_object);
+    rotate_CC(&rotated);
   }
 
-  // Try original position
-  if (!object_collision_detection(temp_object, matrice))
+  for (size_t i = 0; i < sizeof(kicks) / sizeof(kicks[0]); i++)
   {
-    *object = temp_object;
-    return 1; // Successfully rotated
-  }
-
-  // Try moving left or right
-  for (int dx = -1; dx <= 1; dx += 2)
-  {
-    temp_object.pos.x += dx;
-    if (!object_collision_detection(temp_object, matrice))
+    TObject kicked = rotated;
+    kicked.pos.x += kicks[i].x;
+    kicked.pos.y += kicks[i].y;
+    if (!object_collision_detection(&kicked, matrice))
     {
-      *object = temp_object;
-      return 1;
+      *object = kicked;
+      return true;
     }
   }
-
-  // Try moving down
-  temp_object.pos.y += 1;
-  if (!object_collision_detection(temp_object, matrice))
-  {
-    *object = temp_object;
-    return 1;
-  }
-
-  return 0; // Rotation failed, revert
+  return false;
 }
 
-void solidify(TObject object, int matrice[FIELD_HEIGHT][FIELD_WIDTH])
+void solidify(const TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
-  int new_matrice[FIELD_HEIGHT][FIELD_WIDTH];
-
-  memcpy(new_matrice, matrice, sizeof(new_matrice));
-
   for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
   {
     for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
     {
-      if (object.pos.y + i > FIELD_HEIGHT || object.pos.y + i < 0 || object.pos.x + j > FIELD_WIDTH || object.pos.x + j < 0)
+      int x = object->pos.x + j;
+      int y = object->pos.y + i;
+      if (object->matrice[i][j] && in_field(x, y))
       {
-        continue;
-      }
-      if (object.matrice[i][j] == 1)
-      {
-        new_matrice[object.pos.y + i][object.pos.x + j] = 1;
+        matrice[y][x] = 1;
       }
     }
   }
+}
 
-  memcpy(matrice, new_matrice, sizeof(new_matrice));
+static bool row_is_full(int matrice[FIELD_HEIGHT][FIELD_WIDTH], int row)
+{
+  for (int j = 1; j < FIELD_WIDTH - 1; j++)
+  {
+    if (!matrice[row][j])
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 int remove_full_rows(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
 {
-  int new_matrice[FIELD_HEIGHT][FIELD_WIDTH];
-  memcpy(new_matrice, matrice, sizeof(new_matrice));
-  bool full_row;
-  int num_full = 0;
+  int removed = 0;
+  int dst = FIELD_HEIGHT - 2; // row that receives the next kept row
 
-  for (int i = FIELD_HEIGHT - 2; i > 0; i--)
+  // Walk the inside rows bottom-up, keeping the rows that are not full
+  for (int src = FIELD_HEIGHT - 2; src >= 1; src--)
   {
-    full_row = true;
+    if (row_is_full(matrice, src))
+    {
+      removed++;
+      continue;
+    }
+    if (dst != src)
+    {
+      for (int j = 0; j < FIELD_WIDTH; j++)
+      {
+        matrice[dst][j] = matrice[src][j];
+      }
+    }
+    dst--;
+  }
+  // Rows freed at the top become empty
+  for (int i = dst; i >= 1; i--)
+  {
     for (int j = 1; j < FIELD_WIDTH - 1; j++)
     {
-      if (!new_matrice[i][j]) // +1 because of borders
-      {
-        full_row = false;
-        break;
-      }
-    }
-    if (full_row)
-    {
-      for (int k = i; k > 0; k--)
-      {
-        if (k == 1)
-        {
-          for (int j = 1; j < FIELD_WIDTH - 1; j++)
-          {
-            new_matrice[k][j]= 0;
-          }
-        }
-        else
-        {
-          for (int j = 1; j < FIELD_WIDTH - 1; j++)
-          {
-            new_matrice[k][j] = new_matrice[k - 1][j];
-          }
-        }
-      }
-      num_full++;
-      i++;
+      matrice[i][j] = 0;
     }
   }
-  memcpy(matrice, new_matrice, sizeof(new_matrice));
-  return num_full;
-}
-
-void rotate_CC(TObject *object)
-{
-
-  TObject temp_object = *object;
-  int moved_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE] = {0};
-  int is_empty = true;
-  int num_empty = 0;
-
-  reverse(temp_object.matrice);
-  transpose(temp_object.matrice);
-
-  // Counts number of empty rows before object
-  for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
-  {
-    is_empty = true;
-    for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
-    {
-      if (temp_object.matrice[i][j] == 1)
-      {
-        is_empty = false;
-        break;
-      }
-    }
-    if (is_empty)
-    {
-      num_empty++;
-    }
-    else
-    {
-      break;
-    }
-  }
-  if (num_empty > 0) // If there are any empty rows, remove them
-  {
-    // remove empty rows before object
-    for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
-    {
-      for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
-      {
-        if (i + num_empty < OBJECT_MATRICE_SIZE)
-        {
-          moved_matrice[i][j] = temp_object.matrice[i + num_empty][j];
-        }
-        else
-        {
-          moved_matrice[i][j] = 0;
-        }
-      }
-    }
-  }
-
-  if (num_empty > 0)
-  {
-    memcpy(temp_object.matrice, moved_matrice, sizeof(moved_matrice));
-  }
-  *object = temp_object;
-}
-
-void rotate_CW(TObject *object)
-{
-
-  TObject temp_object = *object;
-  int moved_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE] = {0};
-  int is_empty = true;
-  int num_empty = 0;
-
-  transpose(temp_object.matrice);
-  reverse(temp_object.matrice);
-
-  // Counts number of empty cols before object
-  for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
-  {
-    is_empty = true;
-    for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
-    {
-      if (temp_object.matrice[j][i] == 1)
-      {
-        is_empty = false;
-        break;
-      }
-    }
-    if (is_empty)
-    {
-      num_empty++;
-    }
-    else
-    {
-      break;
-    }
-  }
-  if (num_empty > 0) // If there are any empty cols, remove them
-  {
-    // removes empty cols before object
-    for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
-    {
-      for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
-      {
-        if (j + num_empty < OBJECT_MATRICE_SIZE)
-        {
-          moved_matrice[i][j] = temp_object.matrice[i][j + num_empty];
-        }
-        else
-        {
-          moved_matrice[i][j] = 0;
-        }
-      }
-    }
-  }
-
-  if (num_empty > 0)
-  {
-    memcpy(temp_object.matrice, moved_matrice, sizeof(moved_matrice));
-  }
-  *object = temp_object;
-}
-
-void rotate_UP(TObject *object)
-{
-  TObject temp_object = *object;
-
-  for (int i = object->rotation; i > 0; i--)
-  {
-    rotate_CC(&temp_object);
-  }
-
-  *object = temp_object;
+  return removed;
 }

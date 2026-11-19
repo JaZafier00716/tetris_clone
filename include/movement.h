@@ -1,20 +1,20 @@
 #ifndef MOVEMENT_H
 #define MOVEMENT_H
-#include "header.h"
+#include <stdbool.h>
 #include "objects.h"
 
-/* === Start movement.c Functions === */
-void solidify(TObject object, int matrice[FIELD_HEIGHT][FIELD_WIDTH]);
-int object_collision_detection(TObject object, int matrice[FIELD_HEIGHT][FIELD_WIDTH]);             // returns 1 on collision
-int try_move_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], SDL_Point new_pos);    // returns 0 on fail
-int try_rotate_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation);       // returns 0 on fail
-void transpose(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE]);                              // Transposes object matrice
-void reverse(int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE]);                                // Reverses object matrice 
-int remove_full_rows(int matrice[FIELD_HEIGHT][FIELD_WIDTH]);                                       // returns number of removed rows
-void rotate_UP(TObject *object);                                                                    // Rotates object to face upwards
-void rotate_CC(TObject *object);                                                                    // Rotates object Counter Clockwise
-void rotate_CW(TObject *object);                                                                    // Rotates object Clockwise
-/* === End movement.c Functions === */
+/* The playing field: a matrice where the outermost rows/columns are a solid border (1),
+   the inside is empty (0) or filled by locked squares (1). Pure logic, no SDL. */
+#define FIELD_WIDTH 12
+#define FIELD_HEIGHT 22
 
+/* === Start movement.c Functions === */
+void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH]);                                          // empty field with border
+bool object_collision_detection(const TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH]);    // true on collision; squares outside the field collide
+bool try_move_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], TPoint new_pos);     // false on fail
+bool try_rotate_object(TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH], int rotation);      // rotation: 1 = clockwise, -1 = counter clockwise; tries wall kicks; false on fail
+void solidify(const TObject *object, int matrice[FIELD_HEIGHT][FIELD_WIDTH]);                       // writes the object into the field
+int remove_full_rows(int matrice[FIELD_HEIGHT][FIELD_WIDTH]);                                       // returns number of removed rows
+/* === End movement.c Functions === */
 
 #endif

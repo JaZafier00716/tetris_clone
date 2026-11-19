@@ -1,5 +1,5 @@
-#include "../include/draw.h"
-#include <string.h>
+#include "draw.h"
+#include "colors.h"
 
 void draw_background(SDL_Renderer *renderer, SDL_Color color)
 {
@@ -13,7 +13,7 @@ void draw_background(SDL_Renderer *renderer, SDL_Color color)
     SDL_RenderClear(renderer);
 }
 
-void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect box, TObject object, char *text, TTF_Font *font)
+void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect box, const TObject *object, const char *text, TTF_Font *font)
 {
     const SDL_FRect inner = {
         .x = box.x + SPACING_WIDTH,
@@ -44,21 +44,31 @@ void draw_object_box(SDL_Renderer *renderer, SDL_Color color, const SDL_FRect bo
     SDL_RenderFillRectF(renderer, &inner);
     draw_text(renderer, text_rect, text, font, white, true);
 
-    SDL_FPoint pos;
-
-    for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
+    if (!object) // empty box (nothing held yet)
     {
-        pos.y = i * (SQUARE_SIZE + SPACING_WIDTH) + 0.5 * ((inner.h + inner.y - object.h));
-        if (object.h == 1)
+        return;
+    }
+
+    // Center the squares of the object in the space under the title
+    const TBounds bounds = object_bounds(object);
+    const int cols = bounds.col_max - bounds.col_min + 1;
+    const int rows = bounds.row_max - bounds.row_min + 1;
+    const float step = SQUARE_SIZE + SPACING_WIDTH;
+    const float space_top = text_rect.y + text_rect.h;
+    const float space_height = inner.y + inner.h - space_top;
+    const float left = inner.x + 0.5 * (inner.w - (cols * step - SPACING_WIDTH));
+    const float top = space_top + 0.5 * (space_height - (rows * step - SPACING_WIDTH));
+
+    for (int i = bounds.row_min; i <= bounds.row_max; i++)
+    {
+        for (int j = bounds.col_min; j <= bounds.col_max; j++)
         {
-            pos.y -= (SQUARE_SIZE + SPACING_WIDTH) / 2;
-        }
-        for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
-        {
-            pos.x = j * (SQUARE_SIZE + SPACING_WIDTH) + (0.5 * inner.w + inner.x) - 0.5 * (object.w * SQUARE_SIZE + (object.w - 1) * SPACING_WIDTH);
-            if (object.matrice[i][j] == 1)
+            if (object->matrice[i][j])
             {
-                draw_rectangle(renderer, pos, *object.color, SQUARE_SIZE, SQUARE_SIZE);
+                const SDL_FPoint pos = {
+                    .x = left + (j - bounds.col_min) * step,
+                    .y = top + (i - bounds.row_min) * step};
+                draw_rectangle(renderer, pos, *piece_color(object->type), SQUARE_SIZE, SQUARE_SIZE);
             }
         }
     }
@@ -116,22 +126,18 @@ void draw_playing_field(SDL_Renderer *renderer, int matrice[FIELD_HEIGHT][FIELD_
     }
 }
 
-void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, TObject object)
+void draw_object_matrice(SDL_Renderer *renderer, SDL_FPoint offset, const TObject *object)
 {
     SDL_FPoint square_pos;
     for (int i = 0; i < OBJECT_MATRICE_SIZE; i++)
     {
-        square_pos.y = offset.y + (i + object.pos.y) * (SQUARE_SIZE + SPACING_WIDTH);
+        square_pos.y = offset.y + (i + object->pos.y) * (SQUARE_SIZE + SPACING_WIDTH);
         for (int j = 0; j < OBJECT_MATRICE_SIZE; j++)
         {
-            if (object.pos.y + i > FIELD_HEIGHT || object.pos.y + i < 0 || object.pos.x + j > FIELD_WIDTH || object.pos.x + j < 0)
+            square_pos.x = offset.x + (j + object->pos.x) * (SQUARE_SIZE + SPACING_WIDTH);
+            if (object->matrice[i][j])
             {
-                continue;
-            }
-            square_pos.x = offset.x + (j + object.pos.x) * (SQUARE_SIZE + SPACING_WIDTH);
-            if (object.matrice[i][j])
-            {
-                draw_rectangle(renderer, square_pos, *object.color, SQUARE_SIZE, SQUARE_SIZE);
+                draw_rectangle(renderer, square_pos, *piece_color(object->type), SQUARE_SIZE, SQUARE_SIZE);
             }
         }
     }
@@ -202,30 +208,39 @@ void draw_text_box(SDL_Renderer *renderer, TTF_Font *title_font, TTF_Font *data_
     }
 }
 
-int draw_icon(SDL_Renderer *renderer, SDL_FRect rect, char *file_path)
+SDL_Texture *load_icon(SDL_Renderer *renderer, const char *file_path)
 {
     SDL_Surface *surface = IMG_Load(file_path);
     if (!surface)
     {
-        fprintf(stderr, "TTF_RenderText_Solid Error: %s\n", TTF_GetError());
-        return 0;
+        fprintf(stderr, "IMG_Load Error (%s): %s\n", file_path, IMG_GetError());
+        return NULL;
     }
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture)
     {
-        fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", IMG_GetError());
+        fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
+    }
+    SDL_FreeSurface(surface);
+    return texture;
+}
+
+int draw_icon(SDL_Renderer *renderer, SDL_FRect rect, SDL_Texture *icon)
+{
+    if (!icon)
+    {
         return 0;
     }
-
-    SDL_RenderCopyF(renderer, texture, NULL, &rect);
-    SDL_DestroyTexture(texture);
-    SDL_FreeSurface(surface);
-
+    SDL_RenderCopyF(renderer, icon, NULL, &rect);
     return 1;
 }
 
-int draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font, SDL_Color color, bool center)
+int draw_text(SDL_Renderer *renderer, SDL_FRect rect, const char *text, TTF_Font *font, SDL_Color color, bool center)
 {
+    if (text[0] == '\0')
+    {
+        return 1; // nothing to draw, and SDL_ttf refuses empty text
+    }
     SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
     if (!surface)
     {
@@ -235,7 +250,8 @@ int draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture)
     {
-        fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", TTF_GetError());
+        fprintf(stderr, "SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
+        SDL_FreeSurface(surface);
         return 0;
     }
     SDL_FRect text_rect = {
@@ -258,7 +274,7 @@ int draw_text(SDL_Renderer *renderer, SDL_FRect rect, char *text, TTF_Font *font
 
 void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_Font *font, TTF_Font *long_text_font, SDL_Color color)
 {
-    char *alt_text;
+    char alt_text[2 * WORD_SIZE + 4];
     SDL_FRect icon_rect = {
         .x = rect.x,
         .y = rect.y,
@@ -270,17 +286,15 @@ void draw_icon_text(SDL_Renderer *renderer, SDL_FRect rect, TIconText text, TTF_
         .w = rect.w - icon_rect.w - SPACING_WIDTH,
         .h = ICON_SIZE};
 
-    if (!draw_icon(renderer, icon_rect, text.icon_path))
+    if (draw_icon(renderer, icon_rect, text.icon))
+    {
+        snprintf(alt_text, sizeof(alt_text), "%s", text.key_name);
+    }
+    else // no icon, so write the action name next to the key
     {
         text_rect.x = rect.x;
         text_rect.w = rect.w;
-        alt_text = (char *)malloc(sizeof(text.text) + 2 * sizeof(char));
-        sprintf(alt_text, "%s: %c", text.text.name, text.text.bind);
-    }
-    else
-    {
-        alt_text = (char *)malloc(sizeof(text.text.bind) + 3 * sizeof(char));
-        sprintf(alt_text, "%s", text.text.bind);
+        snprintf(alt_text, sizeof(alt_text), "%s: %s", text.name, text.key_name);
     }
     if (strlen(alt_text) > 6)
     {
@@ -309,15 +323,14 @@ void draw_icon_text_block(SDL_Renderer *renderer, SDL_FRect rect, TIconText text
     }
 }
 
-SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, char *button_text)
+SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_color, SDL_Color text_color, TTF_Font *font, const char *button_text)
 {
     SDL_Surface *surface = TTF_RenderText_Solid(font, button_text, text_color);
     if (!surface)
     {
-        SDL_FRect error = {
-            -1, -1, -1, -1};
+        const SDL_FRect nothing = {0, 0, 0, 0};
         fprintf(stderr, "TTF_RenderText_Solid Error: %s\n", TTF_GetError());
-        return error;
+        return nothing;
     }
     pos.x = 0.5 * (pos.x - (surface->w + 2 * SPACING_WIDTH));
     SDL_FRect button = {
@@ -325,12 +338,13 @@ SDL_FRect draw_button(SDL_Renderer *renderer, SDL_FPoint pos, TColor button_colo
         .w = surface->w + 4 * SPACING_WIDTH,
         .x = pos.x,
         .y = pos.y};
+    SDL_FreeSurface(surface);
     draw_rectangle(renderer, pos, button_color, button.w, button.h);
     draw_text(renderer, button, button_text, font, text_color, true);
     return button;
 }
 
-void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, char *title, char **texts)
+void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, int texts_num, const char *title, const char *const *texts)
 {
     SDL_FRect start_pos = {
         .x = rect.x,
@@ -350,7 +364,7 @@ void draw_title_texts(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_fo
     }
 }
 
-void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, char *title, char **texts, TConfigButton *config_buttons, int text_num)
+void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *texts_font, const char *title, const char *const *texts, TConfigButton *config_buttons, int text_num)
 {
     SDL_FRect start_pos = {
         .x = rect.x,
@@ -368,12 +382,14 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
     char temp_text[SETTINGS_ROW_SIZE];
     for (int i = 0; i < text_num; i++)
     {
-        memset(temp_text, '\0', SETTINGS_ROW_SIZE);
         start_pos.y += start_pos.h;
         button_pos.y = start_pos.y;
 
-        strcpy(temp_text, texts[i]);
-        temp_text[sizeof(temp_text) - 1] = '\0';
+        snprintf(temp_text, sizeof(temp_text), "%s", texts[i]);
+
+        // The button edits the action named before the colon
+        snprintf(config_buttons[i].button_name, sizeof(config_buttons[i].button_name), "%.*s",
+                 (int)strcspn(temp_text, ":"), temp_text);
 
         if (strlen(temp_text) > 13)
         {
@@ -386,10 +402,16 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
 
             start_pos.y += SPACING_WIDTH;
 
-            char *name = strtok(temp_text, " ");
-            char *bind = strtok(NULL, "\0");
+            // Long rows are split in two lines: "name:" and the key
+            char *split = strchr(temp_text, ' ');
+            const char *bind = "";
+            if (split)
+            {
+                *split = '\0';
+                bind = split + 1;
+            }
 
-            draw_text(renderer, start_pos, name, texts_font, white, false);
+            draw_text(renderer, start_pos, temp_text, texts_font, white, false);
             start_pos.y += start_pos.h;
 
             draw_text(renderer, start_pos, bind, texts_font, white, false);
@@ -406,13 +428,11 @@ void draw_title_config_box(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *tit
 
             draw_text(renderer, start_pos, temp_text, texts_font, white, false);
         }
-        char *button_name = strtok(temp_text, ":");
-        config_buttons[i].button_name = strdup(button_name);
         config_buttons[i].button_pos = draw_button(renderer, button_pos, orange, white, texts_font, EDIT);
     }
 }
 
-void draw_edit_block(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_font, TTF_Font *data_font, char *title_text, char *pressed_key, SDL_FRect *buttons)
+void draw_edit_block(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *data_font, const char *title_text, const char *pressed_key, SDL_FRect *buttons)
 {
     SDL_SetRenderDrawColor(renderer, dark.secondary.r, dark.secondary.g, dark.secondary.b, dark.secondary.a);
     SDL_RenderFillRectF(renderer, &rect);
@@ -438,10 +458,10 @@ void draw_edit_block(SDL_Renderer *renderer, SDL_FRect rect, TTF_Font *title_fon
     };
     draw_text(renderer, text, title_text, data_font, white, true);
 
-    char press_text[WORD_SIZE * 2];
-    if (strcmp(pressed_key, "") != 0)
+    char press_text[WORD_SIZE * 2 + 16];
+    if (pressed_key[0] != '\0')
     {
-        sprintf(press_text, "pressed: %s", pressed_key);
+        snprintf(press_text, sizeof(press_text), "pressed: %s", pressed_key);
         draw_text(renderer, new_bind_text, press_text, data_font, light.primary, true);
     }
 

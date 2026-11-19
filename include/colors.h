@@ -3,18 +3,20 @@
 #include "header.h"
 
 /* === Start Color Definitions === */
-extern TColor light;
-extern TColor dark;
-extern TColor red;
-extern TColor orange;
-extern TColor yellow;
-extern TColor green;
-extern TColor cyan;
-extern TColor blue;
-extern TColor purple;
+extern const TColor light;
+extern const TColor dark;
+extern const TColor red;
+extern const TColor orange;
+extern const TColor yellow;
+extern const TColor green;
+extern const TColor cyan;
+extern const TColor blue;
+extern const TColor purple;
 
-extern SDL_Color black;
-extern SDL_Color white;
+extern const SDL_Color black;
+extern const SDL_Color white;
+
+const TColor *piece_color(PieceType type);
 /* === End Color Definitions === */
 
 #endif

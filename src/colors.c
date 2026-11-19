@@ -1,19 +1,19 @@
-#include "../include/colors.h"
+#include "colors.h"
 
-SDL_Color black = {
+const SDL_Color black = {
     0,  // Red
     0,  // Green
     0,  // Blue
     255 // Alpha
 };
-SDL_Color white = {
+const SDL_Color white = {
     255, // Red
     255, // Green
     255, // Blue
     255  // Alpha
 };
 
-TColor light = {
+const TColor light = {
     .primary = {
         205, // Red
         205, // Green
@@ -28,7 +28,7 @@ TColor light = {
     }};
 
 // Empty node color
-TColor dark = {
+const TColor dark = {
     .primary = {
         100, // Red
         100, // Green
@@ -42,7 +42,7 @@ TColor dark = {
         255 // Alpha
     }};
 
-TColor red = {
+const TColor red = {
     .primary = {
         255, // Red
         70,  // Green
@@ -56,7 +56,7 @@ TColor red = {
         255  // Alpha
     }};
 
-TColor orange = {
+const TColor orange = {
     .primary = {
         255, // Red
         155, // Green
@@ -71,7 +71,7 @@ TColor orange = {
         255  // Alpha
     }};
 
-TColor yellow = {
+const TColor yellow = {
     .primary = {
         255, // Red
         230, // Green
@@ -86,7 +86,7 @@ TColor yellow = {
         255  // Alpha
     }};
 
-TColor green = {
+const TColor green = {
     .primary = {
         10,  // Red
         255, // Green
@@ -101,7 +101,7 @@ TColor green = {
         255  // Alpha
     }};
 
-TColor cyan = {
+const TColor cyan = {
     .primary = {
         0,   // Red
         255, // Green
@@ -116,7 +116,7 @@ TColor cyan = {
         255  // Alpha
     }};
 
-TColor blue = {
+const TColor blue = {
     .primary = {
         0,   // Red
         130, // Green
@@ -131,7 +131,7 @@ TColor blue = {
         255  // Alpha
     }};
 
-TColor purple = {
+const TColor purple = {
     .primary = {
         150, // Red
         0,   // Green
@@ -145,3 +145,17 @@ TColor purple = {
         180, // Blue
         255  // Alpha
     }};
+
+const TColor *piece_color(PieceType type)
+{
+    static const TColor *colors[PIECE_COUNT] = {
+        [PIECE_I] = &cyan,
+        [PIECE_J] = &blue,
+        [PIECE_L] = &orange,
+        [PIECE_O] = &yellow,
+        [PIECE_S] = &green,
+        [PIECE_T] = &purple,
+        [PIECE_Z] = &red,
+    };
+    return colors[type];
+}

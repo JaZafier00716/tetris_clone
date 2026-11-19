@@ -1,8 +1,6 @@
-#include "../include/window.h"
+#include "window.h"
 
-int main() {
-    srand(time(NULL));
-    window_select();
-
-    return 0;
+int main(void)
+{
+    return window_select();
 }

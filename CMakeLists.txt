@@ -1,31 +1,49 @@
 cmake_minimum_required(VERSION 3.10)
+project(tetris C)
 
-# Project name
-project(tetris)
-
-# Specify the C++ standard (or C standard if using C)
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Add the executable target
-add_executable(tetris src/main.c src/window.c src/draw.c src/colors.c src/objects.c src/movement.c)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+endif()
 
-# Add address sanitizer
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+# Run e.g. `cmake -S . -B build-asan -DTETRIS_SANITIZE=ON` to build with AddressSanitizer + UBSan
+option(TETRIS_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(TETRIS_SANITIZE)
+  add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address,undefined)
+endif()
 
-# Specify output directories
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(-Wall -Wextra)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Include directories if needed
-include_directories(include)
+# Game rules: no SDL, so it can be tested without a window
+add_library(tetris_logic STATIC
+  src/objects.c
+  src/movement.c
+  src/game.c
+  src/scores.c)
+target_include_directories(tetris_logic PUBLIC include)
 
-# Link any libraries if needed (e.g., SDL2)
+# The game itself: window, drawing and input
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
-target_link_libraries(tetris SDL2::SDL2 SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
 
-set(CMAKE_BUILD_TYPE Debug)           # Set the build type to Debug
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+# Key bindings: uses SDL key names, but needs no window
+add_library(tetris_config STATIC src/config.c)
+target_include_directories(tetris_config PUBLIC include)
+target_link_libraries(tetris_config PUBLIC tetris_logic SDL2::SDL2 SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
 
+add_executable(tetris
+  src/main.c
+  src/window.c
+  src/draw.c
+  src/colors.c)
+target_link_libraries(tetris PRIVATE tetris_config)
+# Assets (icons, font, config, scores) are found relative to the repository, whatever the working directory
+target_compile_definitions(tetris PRIVATE ASSET_DIR="${CMAKE_SOURCE_DIR}")

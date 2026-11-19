@@ -1,51 +1,48 @@
 #ifndef OBJECTS_H
 #define OBJECTS_H
-#include "header.h"
-#include "colors.h"
 
-/* === Start Object Definitions === */
-enum direction
+/* Tetrominoes: shapes and rotation. Pure logic, no SDL. */
+
+#define OBJECT_MATRICE_SIZE 4
+
+typedef enum
 {
-  UP,
-  RIGHT,
-  DOWN,
-  LEFT
-};
+  PIECE_I,
+  PIECE_J,
+  PIECE_L,
+  PIECE_O,
+  PIECE_S,
+  PIECE_T,
+  PIECE_Z,
+  PIECE_COUNT
+} PieceType;
 
-typedef struct {
-  char name[WORD_SIZE];
-  char bind[WORD_SIZE];
-  char sdl_name;
-}TBinds;
+typedef struct
+{
+  int x;
+  int y;
+} TPoint;
 
-typedef struct {
-  TBinds move_left,move_right, move_down, move_hold, rotate_left, rotate_right;
-}TMovement;
-
-typedef struct {
-  TBinds text;
-  char *icon_path;
-}TIconText;
+typedef struct
+{
+  int row_min, row_max; // rows/columns of the object matrice that contain squares
+  int col_min, col_max;
+} TBounds;
 
 typedef struct
 {
   int matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE];
-  TColor *color;
-  SDL_Point pos;
-  enum direction rotation;
-  int w;
-  int h;
+  PieceType type;
+  TPoint pos; // position of the matrice's top-left corner in the playing field
 } TObject;
 
-extern TObject empty_object;
-extern TObject object_I;
-extern TObject object_J;
-extern TObject object_L;
-extern TObject object_O;
-extern TObject object_S;
-extern TObject object_T;
-extern TObject object_Z;
-/* === End Object Definitions === */
-
+/* Creates a piece in its spawn orientation, with pos {0, 0}. */
+TObject object_create(PieceType type);
+/* Rotates the piece 90 degrees. The piece is rotated inside its own square box
+   (4x4 for I, 2x2 for O, 3x3 otherwise), so four rotations restore the original. */
+void rotate_CW(TObject *object);
+void rotate_CC(TObject *object);
+/* Smallest rectangle of the matrice that contains all squares of the piece. */
+TBounds object_bounds(const TObject *object);
 
 #endif

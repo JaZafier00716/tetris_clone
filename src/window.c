@@ -1,123 +1,110 @@
-#include "../include/window.h"
+#include "window.h"
+#include <time.h>
+#include "colors.h"
+#include "config.h"
+#include "draw.h"
 
-int window_select()
+static bool point_in_rect(float x, float y, SDL_FRect rect)
 {
-    int select_window = MENU;
-    int window_width,
-        window_height;
+    return x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h;
+}
 
-    // SDL Initialization
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
-    { // If Initialization Failed, return 1
+// Creates a window with a renderer. Prefers a vsynced hardware renderer, falls back to software.
+static bool create_window(const char *title, int width, int height, Uint32 window_flags, SDL_Window **window, SDL_Renderer **renderer)
+{
+    *window = SDL_CreateWindow(title, 100, 100, width, height, window_flags);
+    if (!*window)
+    {
+        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+        return false;
+    }
+    *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!*renderer)
+    {
+        *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_SOFTWARE);
+    }
+    if (!*renderer)
+    {
+        fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(*window);
+        *window = NULL;
+        return false;
+    }
+    return true;
+}
+
+int window_select(void)
+{
+    int status = 0;
+
+    if (SDL_Init(SDL_INIT_VIDEO))
+    {
         fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
         return 1;
     }
-
     if (TTF_Init())
     {
         fprintf(stderr, "TTF_Init Error: %s\n", TTF_GetError());
+        SDL_Quit();
         return 1;
     }
-
     if (IMG_Init(IMG_INIT_PNG) == 0)
     {
         fprintf(stderr, "IMG_Init Error: %s\n", IMG_GetError());
+        TTF_Quit();
+        SDL_Quit();
         return 1;
     }
-    do
+
+    int select_window = MENU;
+    while (select_window == MENU || select_window == GAME)
     {
-        if (select_window == MENU)
+        const bool menu = select_window == MENU;
+        SDL_Window *window;
+        SDL_Renderer *renderer;
+        if (!create_window(menu ? "ZAM0074 - Tetris/menu_window" : "ZAM0074 - Tetris/game_window",
+                           menu ? 800 : 1920, menu ? 600 : 1080,
+                           menu ? SDL_WINDOW_SHOWN : SDL_WINDOW_FULLSCREEN_DESKTOP,
+                           &window, &renderer))
         {
-            SDL_Window *menu_window = SDL_CreateWindow(
-                "ZAM0074 - Tetris/menu_window", // Window title
-                100,                            // Y coords
-                100,                            // X coords
-                800,                            // Default window width
-                600,                            // Default window height
-                SDL_WINDOW_SHOWN                // Show window right after creation
-            );
-            // If Creation Failed, return 1
-            if (!menu_window)
-            {
-                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-                TTF_Quit();
-                IMG_Quit();
-                SDL_Quit();
-                return 1;
-            }
-            SDL_Renderer *menu_renderer = SDL_CreateRenderer(
-                menu_window,
-                -1,
-                SDL_RENDERER_ACCELERATED // SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
-            );
-            // If Creation Failed, return 1
-            if (!menu_renderer)
-            {
-                SDL_DestroyWindow(menu_window);
-                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-                TTF_Quit();
-                IMG_Quit();
-                SDL_Quit();
-                return 1;
-            }
-            SDL_GetWindowSize(menu_window, &window_width, &window_height); // Get window width and height
-            select_window = main_menu(menu_renderer, window_width, window_height);
-            SDL_DestroyRenderer(menu_renderer);
-            SDL_DestroyWindow(menu_window);
+            status = 1;
+            break;
         }
-        if (select_window == GAME)
-        {
-            // Create SDL Window
-            SDL_Window *game_window = SDL_CreateWindow(
-                "ZAM0074 - Tetris/game_window", // Window title
-                100,                            // Y coords
-                100,                            // X coords
-                1920,                           // Default window width
-                1080,                           // Default window height
-                // next_box.x + next_box.w + SPACING_WIDTH, // Window width - based on size and position of next object box
-                // matrice_box.h + matrice_box.y * 2,       // Window height - based on spacing around matrice and matrice height
-                SDL_WINDOW_FULLSCREEN_DESKTOP // Show window right after creation
-            );
-            if (!game_window)
-            {
-                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-                SDL_Quit();
-                return 1;
-            }
-            // Create SDL Renderer
-            SDL_Renderer *game_renderer = SDL_CreateRenderer(
-                game_window,
-                -1,
-                SDL_RENDERER_ACCELERATED //| SDL_RENDERER_PRESENTVSYNC // Hardware acceleration,  VSYNC enabled
-            );
+        int window_width, window_height;
+        SDL_GetWindowSize(window, &window_width, &window_height);
 
-            // If Creation Failed, return 1
-            if (!game_renderer)
+        if (menu)
+        {
+            select_window = main_menu(renderer, window_width, window_height);
+        }
+        else
+        {
+            do // a restart plays again in the same window
             {
-                SDL_DestroyWindow(game_window);
-                fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
-                SDL_Quit();
-                return 1;
-            }
-            SDL_GetWindowSize(game_window, &window_width, &window_height); // Get window width and height
-            do
-            {
-                select_window = game_infinite_loop(game_renderer, window_width, window_height);
+                select_window = game_infinite_loop(renderer, window_width, window_height);
             } while (select_window == GAME);
-            SDL_DestroyRenderer(game_renderer);
-            SDL_DestroyWindow(game_window);
         }
-    } while (select_window == GAME || select_window == MENU);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+    }
+    if (select_window == SCREEN_ERROR)
+    {
+        status = 1;
+    }
 
+    IMG_Quit();
     TTF_Quit();
     SDL_Quit();
-    IMG_Quit();
-    return 0;
+    return status;
 }
 
-int SDL_rand(int max)
+// Writes one "action: key" row for every action, in the order they are listed in the menu
+static void format_bind_rows(char rows[BINDS_NUM][SETTINGS_ROW_SIZE], const TKeyMap *keymap)
 {
-    return rand() % (max + 1);
+    for (int i = 0; i < BINDS_NUM; i++)
+    {
+        snprintf(rows[i], SETTINGS_ROW_SIZE, "%s: %s", action_name((Action)i), SDL_GetKeyName(keymap->keys[i]));
+    }
 }
 
 int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
@@ -135,368 +122,152 @@ int main_menu(SDL_Renderer *renderer, int window_width, int window_height)
         .y = 2 * SPACING_WIDTH,
         .w = window_width - 2 * SPACING_WIDTH - (window_width - 6 * SPACING_WIDTH) * 2 / 3,
         .h = window_height - 4 * SPACING_WIDTH};
-
     SDL_FRect edit_block = {
         .x = (window_width - 10 * SQUARE_SIZE) / 2,
         .y = (window_height - (2 * TITLE_SIZE + SQUARE_SIZE)) / 2,
         .h = 2 * TEXT_SIZE + SQUARE_SIZE,
         .w = 10 * SQUARE_SIZE};
+
     TTF_Font *title_font = TTF_OpenFont(FONT, 48);
-    if (!title_font)
-    {
-        fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        return -1;
-    }
     TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
-    if (!data_font)
+    if (!title_font || !data_font)
     {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        TTF_CloseFont(title_font);
-        return -1;
-    }
-    char row[SETTINGS_ROW_SIZE];
-    int text_num = 0;
-
-    char **best_scores_text = malloc(sizeof(char *) * BEST_SCORE_NUM);
-    if (!best_scores_text)
-    {
-        printf("Could not allocate memory\n");
-        TTF_CloseFont(title_font);
-        TTF_CloseFont(data_font);
-        return -1;
-    }
-    for (int i = 0; i < BEST_SCORE_NUM; i++)
-    {
-        best_scores_text[i] = malloc(SETTINGS_ROW_SIZE);
-        if (!best_scores_text[i])
+        if (title_font)
         {
-            printf("Could not allocate memory\n");
-            for (int j = 0; j < i; j++)
-            {
-                free(best_scores_text[j]);
-                best_scores_text[j] = NULL;
-            }
-            free(best_scores_text);
-            best_scores_text = NULL;
             TTF_CloseFont(title_font);
-            TTF_CloseFont(data_font);
-            return -1;
         }
+        if (data_font)
+        {
+            TTF_CloseFont(data_font);
+        }
+        return SCREEN_ERROR;
     }
 
-    char **binds_texts = malloc(sizeof(char *) * BINDS_NUM);
-    if (!binds_texts)
+    TKeyMap keymap;
+    if (!keymap_load(&keymap, CFG_FILE))
     {
-        printf("Could not allocate memory\n");
-        for (int i = 0; i < text_num; i++)
-        {
-            free(best_scores_text[i]);
-            best_scores_text[i] = NULL;
-        }
-        free(best_scores_text);
-        best_scores_text = NULL;
-        TTF_CloseFont(title_font);
-        TTF_CloseFont(data_font);
-        return -1;
+        fprintf(stderr, "Could not read %s, using default keys\n", CFG_FILE);
     }
+    char binds_rows[BINDS_NUM][SETTINGS_ROW_SIZE];
+    const char *binds_texts[BINDS_NUM];
+    format_bind_rows(binds_rows, &keymap);
     for (int i = 0; i < BINDS_NUM; i++)
     {
-        binds_texts[i] = malloc(WORD_SIZE * 2 + 2);
-        if (!binds_texts[i])
-        {
-            printf("Could not allocate memory\n");
-            for (int j = 0; j < text_num; j++)
-            {
-                free(best_scores_text[j]);
-                best_scores_text[j] = NULL;
-            }
-            free(best_scores_text);
-            best_scores_text = NULL;
-            for (int j = 0; j < i; j++)
-            {
-                free(binds_texts[j]);
-                binds_texts[j] = NULL;
-            }
-            free(binds_texts);
-            binds_texts = NULL;
-            TTF_CloseFont(title_font);
-            TTF_CloseFont(data_font);
-            return -1;
-        }
+        binds_texts[i] = binds_rows[i];
     }
 
-    // TMovement move;
-    TMovement move = {
-        .move_down.bind[0] = move_down,
-        .move_down.sdl_name = move_down,
-        .move_left.bind[0] = move_left,
-        .move_left.sdl_name = move_left,
-        .move_right.bind[0] = move_right,
-        .move_right.sdl_name = move_right,
-        .move_hold.bind[0] = move_hold,
-        .move_hold.sdl_name = move_hold,
-        .rotate_right.bind[0] = rotate_right,
-        .rotate_right.sdl_name = rotate_right,
-        .rotate_left.bind[0] = rotate_left,
-        .rotate_left.sdl_name = rotate_left};
-    if (!get_settings(&move))
+    int scores[BEST_SCORE_NUM];
+    char score_rows[BEST_SCORE_NUM][SETTINGS_ROW_SIZE];
+    const char *best_scores_text[BEST_SCORE_NUM];
+    int text_num = scores_load(SCORE_FILE, scores);
+    if (text_num == 0)
     {
-        fprintf(stderr, "Failed to open config file", SDL_GetError());
-        for (int j = 0; j < text_num; j++)
-        {
-            free(best_scores_text[j]);
-            best_scores_text[j] = NULL;
-        }
-        free(best_scores_text);
-        best_scores_text = NULL;
-        for (int j = 0; j < BINDS_NUM; j++)
-        {
-            free(binds_texts[j]);
-            binds_texts[j] = NULL;
-        }
-        free(binds_texts);
-        binds_texts = NULL;
-        TTF_CloseFont(title_font);
-        TTF_CloseFont(data_font);
-        return -1;
-    }
-
-    sprintf(binds_texts[0], "%s: %s\0", move.move_down.name, move.move_down.bind);
-    sprintf(binds_texts[1], "%s: %s\0", move.move_left.name, move.move_left.bind);
-    sprintf(binds_texts[2], "%s: %s\0", move.move_right.name, move.move_right.bind);
-    sprintf(binds_texts[3], "%s: %s\0", move.move_hold.name, move.move_hold.bind);
-    sprintf(binds_texts[4], "%s: %s\0", move.rotate_right.name, move.rotate_right.bind);
-    sprintf(binds_texts[5], "%s: %s\0", move.rotate_left.name, move.rotate_left.bind);
-
-    FILE *f = fopen(SCORE_FILE, "r");
-    if (!f)
-    {
-        printf("could not open file");
-        strcpy(best_scores_text[0], NO_SCORE);
+        snprintf(score_rows[0], SETTINGS_ROW_SIZE, "%s", NO_SCORE);
         text_num = 1;
     }
     else
     {
-        while (fgets(row, sizeof(row), f))
+        for (int i = 0; i < text_num; i++)
         {
-            row[strcspn(row, "\n")] = '\0';
-            strcpy(best_scores_text[text_num], row);
-            text_num++;
-            if (text_num >= BEST_SCORE_NUM)
-            {
-                break;
-            }
+            snprintf(score_rows[i], SETTINGS_ROW_SIZE, "%d", scores[i]);
         }
-        fclose(f);
     }
-
-    TConfigButton config_buttons[BINDS_NUM];
-    // Render Main menu
-    draw_title_texts(renderer, best_scores, title_font, data_font, text_num, BEST_SCORES, best_scores_text);
-    SDL_FRect start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
-    if (start_button_pos.h == -1)
+    for (int i = 0; i < text_num; i++)
     {
-        SDL_FRect retry = draw_button(renderer, start_button, blue, white, title_font, MAIN_MENU); // draw main menu button
-        if (retry.h == -1)
-        {
-            printf("could not draw button\n");
-            for (int j = 0; j < text_num; j++)
-            {
-                free(best_scores_text[j]);
-                best_scores_text[j] = NULL;
-            }
-            free(best_scores_text);
-            best_scores_text = NULL;
-            for (int j = 0; j < BINDS_NUM; j++)
-            {
-                free(binds_texts[j]);
-                binds_texts[j] = NULL;
-            }
-            free(binds_texts);
-            binds_texts = NULL;
-            TTF_CloseFont(title_font);
-            TTF_CloseFont(data_font);
-            return -1;
-        }
-        else
-        {
-            start_button_pos = retry;
-        }
+        best_scores_text[i] = score_rows[i];
     }
-    draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, config_buttons, BINDS_NUM);
-    SDL_RenderPresent(renderer);
 
-    SDL_FRect edit_buttons[2];
+    TConfigButton config_buttons[BINDS_NUM] = {0};
+    SDL_FRect edit_buttons[2] = {0};
+    SDL_FRect start_button_pos = {0};
 
-    char new_bind[WORD_SIZE] = "";
     SDL_Event e;
-    char edited_key[WORD_SIZE];
     bool editing = false;
+    Action edited_action = ACTION_NONE;
+    SDL_Keycode new_key = SDLK_UNKNOWN;
+    int next_screen = SCREEN_QUIT;
     bool running = true;
     while (running)
     {
         draw_background(renderer, black);
         draw_title_texts(renderer, best_scores, title_font, data_font, text_num, BEST_SCORES, best_scores_text);
-        SDL_FRect start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
-        if (start_button_pos.h == -1)
-        {
-            SDL_FRect retry = draw_button(renderer, start_button, blue, white, title_font, MAIN_MENU); // draw main menu button
-            if (retry.h == -1)
-            {
-                printf("could not draw button\n");
-                for (int j = 0; j < text_num; j++)
-                {
-                    free(best_scores_text[j]);
-                    best_scores_text[j] = NULL;
-                }
-                free(best_scores_text);
-                best_scores_text = NULL;
-                for (int j = 0; j < BINDS_NUM; j++)
-                {
-                    free(binds_texts[j]);
-                    binds_texts[j] = NULL;
-                }
-                free(binds_texts);
-                binds_texts = NULL;
-                TTF_CloseFont(title_font);
-                TTF_CloseFont(data_font);
-                return -1;
-            }
-            else
-            {
-                start_button_pos = retry;
-            }
-        }
+        start_button_pos = draw_button(renderer, start_button, green, white, title_font, START);
         draw_title_config_box(renderer, config_box, title_font, data_font, CONFIG, binds_texts, config_buttons, BINDS_NUM);
+
         while (SDL_PollEvent(&e))
         {
             switch (e.type)
             {
             case SDL_QUIT:
+                next_screen = SCREEN_QUIT;
                 running = false;
                 break;
             case SDL_MOUSEBUTTONDOWN:
-                if (e.button.button == SDL_BUTTON_LEFT)
+                if (e.button.button != SDL_BUTTON_LEFT)
                 {
-                    // check if start had been pressed
-                    if (e.button.x >= start_button_pos.x && e.button.x <= (start_button_pos.x + start_button_pos.w) && e.button.y >= start_button_pos.y && e.button.y <= (start_button_pos.y + start_button_pos.h))
+                    break;
+                }
+                if (point_in_rect(e.button.x, e.button.y, start_button_pos))
+                {
+                    next_screen = GAME;
+                    running = false;
+                    break;
+                }
+                if (editing)
+                {
+                    if (new_key != SDLK_UNKNOWN && point_in_rect(e.button.x, e.button.y, edit_buttons[0]))
                     {
-                        printf("start button clicked\n");
-                        for (int j = 0; j < text_num; j++)
+                        // Submit: use the new key for the action and store it
+                        keymap.keys[edited_action] = new_key;
+                        if (!keymap_save(&keymap, CFG_FILE, TMP_FILE))
                         {
-                            free(best_scores_text[j]);
-                            best_scores_text[j] = NULL;
+                            fprintf(stderr, "Could not save %s\n", CFG_FILE);
                         }
-                        free(best_scores_text);
-                        best_scores_text = NULL;
-                        for (int j = 0; j < BINDS_NUM; j++)
-                        {
-                            free(binds_texts[j]);
-                            binds_texts[j] = NULL;
-                        }
-                        free(binds_texts);
-                        binds_texts = NULL;
-                        TTF_CloseFont(title_font);
-                        TTF_CloseFont(data_font);
-                        return GAME; // return to main menu
+                        format_bind_rows(binds_rows, &keymap);
+                        editing = false;
                     }
-                    // Editing window buttons
-                    if (editing)
+                    else if (point_in_rect(e.button.x, e.button.y, edit_buttons[1]) || !point_in_rect(e.button.x, e.button.y, edit_block))
                     {
-                        if (strlen(new_bind) > 0)
-                        {
-                            if (e.button.x >= edit_buttons[0].x && e.button.x <= (edit_buttons[0].x + edit_buttons[0].w) && e.button.y >= edit_buttons[0].y && e.button.y <= (edit_buttons[0].y + edit_buttons[0].h))
-                            {
-                                // update bind
-                                update_settings(new_bind, edited_key);
-                                if (!get_settings(&move))
-                                {
-                                    fprintf(stderr, "Failed to open config file", SDL_GetError());
-                                    for (int j = 0; j < text_num; j++)
-                                    {
-                                        free(best_scores_text[j]);
-                                        best_scores_text[j] = NULL;
-                                    }
-                                    free(best_scores_text);
-                                    best_scores_text = NULL;
-                                    for (int j = 0; j < BINDS_NUM; j++)
-                                    {
-                                        free(binds_texts[j]);
-                                        binds_texts[j] = NULL;
-                                    }
-                                    free(binds_texts);
-                                    binds_texts = NULL;
-                                    TTF_CloseFont(title_font);
-                                    TTF_CloseFont(data_font);
-                                    return -1;
-                                }
-                                sprintf(binds_texts[0], "%s: %s\0", move.move_down.name, move.move_down.bind);
-                                sprintf(binds_texts[1], "%s: %s\0", move.move_left.name, move.move_left.bind);
-                                sprintf(binds_texts[2], "%s: %s\0", move.move_right.name, move.move_right.bind);
-                                sprintf(binds_texts[3], "%s: %s\0", move.move_hold.name, move.move_hold.bind);
-                                sprintf(binds_texts[4], "%s: %s\0", move.rotate_right.name, move.rotate_right.bind);
-                                sprintf(binds_texts[5], "%s: %s\0", move.rotate_left.name, move.rotate_left.bind);
-                                printf("config updated\n");
-                                editing = false;
-                            }
-                        }
-                        // Cancel button
-                        if (e.button.x >= edit_buttons[1].x && e.button.x <= (edit_buttons[1].x + edit_buttons[1].w) && e.button.y >= edit_buttons[1].y && e.button.y <= (edit_buttons[1].y + edit_buttons[1].h))
-                        {
-                            memset(new_bind, '\0', sizeof(new_bind));
-                            editing = 0;
-                        }
-                        if (e.button.x < edit_block.x || e.button.x > (edit_block.x + edit_block.w) || e.button.y < edit_block.y || e.button.y > (edit_block.y + edit_block.h))
-                        {
-                            memset(new_bind, '\0', sizeof(new_bind));
-                            editing = 0;
-                        }
+                        editing = false; // Cancel button or click outside of the edit block
                     }
-                    // Edit Config buttons
-                    for (int i = 0; i < BINDS_NUM; i++)
+                }
+                // Edit Config buttons
+                for (int i = 0; i < BINDS_NUM; i++)
+                {
+                    if (point_in_rect(e.button.x, e.button.y, config_buttons[i].button_pos))
                     {
-                        if (e.button.x >= config_buttons[i].button_pos.x && e.button.x <= (config_buttons[i].button_pos.x + config_buttons[i].button_pos.w) && e.button.y >= config_buttons[i].button_pos.y && e.button.y <= (config_buttons[i].button_pos.y + config_buttons[i].button_pos.h))
-                        {
-                            editing = true;
-                            strcpy(edited_key, config_buttons[i].button_name);
-                            printf("pressed edit: %s\n", edited_key);
-                            break;
-                        }
+                        editing = true;
+                        edited_action = (Action)i;
+                        new_key = SDLK_UNKNOWN;
+                        break;
                     }
                 }
                 break;
             case SDL_KEYDOWN:
-                if (editing)
+                if (editing && e.key.keysym.sym == SDLK_ESCAPE)
                 {
-                    get_normalized_name(e.key.keysym.sym, new_bind);
-                    printf("new bind: %s\n", new_bind);
+                    editing = false; // escape is reserved for pausing the game
+                }
+                else if (editing && e.key.keysym.sym != SDLK_UNKNOWN)
+                {
+                    new_key = e.key.keysym.sym;
                 }
                 break;
             }
         }
         if (editing)
         {
-            draw_edit_block(renderer, edit_block, title_font, data_font, NEW_BIND, new_bind, edit_buttons);
+            draw_edit_block(renderer, edit_block, data_font, NEW_BIND,
+                            new_key == SDLK_UNKNOWN ? "" : SDL_GetKeyName(new_key), edit_buttons);
         }
         SDL_RenderPresent(renderer);
+        SDL_Delay(1); // do not spin the CPU when vsync is not available
     }
-    for (int j = 0; j < text_num; j++)
-    {
-        free(best_scores_text[j]);
-        best_scores_text[j] = NULL;
-    }
-    free(best_scores_text);
-    best_scores_text = NULL;
-    for (int j = 0; j < BINDS_NUM; j++)
-    {
-        free(binds_texts[j]);
-        binds_texts[j] = NULL;
-    }
-    free(binds_texts);
-    binds_texts = NULL;
+
     TTF_CloseFont(title_font);
     TTF_CloseFont(data_font);
-    return -1;
+    return next_screen;
 }
 
 int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_height)
@@ -537,12 +308,6 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
         .w = ICON_SIZE,
         .x = next_box.x + next_box.w - ICON_SIZE,
         .y = matrice_box.h + matrice_box.y - ICON_SIZE};
-    const SDL_FRect sound_img_box = {
-        .h = ICON_SIZE,
-        .w = ICON_SIZE,
-        .x = cog_img_box.x - ICON_SIZE - SPACING_WIDTH,
-        .y = cog_img_box.y,
-    };
     const SDL_FRect binds_box = {
         .h = BINDS_NUM * (ICON_SIZE + SPACING_WIDTH),
         .w = next_box.w,
@@ -569,900 +334,241 @@ int game_infinite_loop(SDL_Renderer *renderer, int window_width, int window_heig
         .y = matrice_box.y,
     };
 
-    bool running = true;
-    bool game_over = false;
-    SDL_Event e;
-    int game_field[FIELD_HEIGHT][FIELD_WIDTH];
-
-    // Matrice initialization
-    matrice_init(game_field);
-
-    // Font Definition
-    TTF_Font *title_font = TTF_OpenFont(FONT, TITLE_SIZE);
-    if (!title_font)
+    // Which icon belongs to which action in the binds box
+    static const struct
     {
-        fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        return -1;
-    }
-    TTF_Font *data_font = TTF_OpenFont(FONT, TEXT_SIZE);
-    if (!data_font)
-    {
-        fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        TTF_CloseFont(title_font);
-        return -1;
-    }
-
-    // Score and lines text
-    char level_str[WORD_SIZE];
-    char score_str[WORD_SIZE];
-    char lines_str[WORD_SIZE];
-    TDataText data_texts[3];
-    data_texts[0].title = LEVEL_TEXT;
-    data_texts[0].data = "0";
-    data_texts[1].title = SCORE_TEXT;
-    data_texts[1].data = "0";
-    data_texts[2].title = LINES_TEXT;
-    data_texts[2].data = "0";
-
-    // An array Cotaining all objects
-    TObject object_array[7] = {
-        object_I,
-        object_J,
-        object_L,
-        object_O,
-        object_S,
-        object_T,
-        object_Z,
+        Action action;
+        const char *icon_path;
+    } bind_rows[BINDS_NUM] = {
+        {ACTION_MOVE_DOWN, ARROW_DOWN},
+        {ACTION_MOVE_LEFT, ARROW_LEFT},
+        {ACTION_MOVE_RIGHT, ARROW_RIGHT},
+        {ACTION_MOVE_HOLD, HOLD},
+        {ACTION_ROTATE_LEFT, ROTATE_CC},
+        {ACTION_ROTATE_RIGHT, ROTATE_CW},
     };
 
-    // Object definitions
-    TObject object;
-    TObject hold;
-    TObject next;
+    // Resources are released at the cleanup label, whichever way the screen is left
+    int next_screen = SCREEN_ERROR;
+    TTF_Font *title_font = NULL;
+    TTF_Font *data_font = NULL;
+    SDL_Texture *pause_icon = NULL;
+    SDL_Texture *play_icon = NULL;
+    TIconText binds[BINDS_NUM] = {0};
 
-    // Generating random object index
-    int random_object = SDL_rand(6);
-    int random_next = SDL_rand(6);
-
-    // Moving object starting position variables
-    int rand_x_position = SDL_rand(6) + 1;
-
-    // Movement variables
-
-    // TMovement move;
-    TMovement move = {
-        .move_down.bind[0] = move_down,
-        .move_down.sdl_name = move_down,
-        .move_left.bind[0] = move_left,
-        .move_left.sdl_name = move_left,
-        .move_right.bind[0] = move_right,
-        .move_right.sdl_name = move_right,
-        .move_hold.bind[0] = move_hold,
-        .move_hold.sdl_name = move_hold,
-        .rotate_right.bind[0] = rotate_right,
-        .rotate_right.sdl_name = rotate_right,
-        .rotate_left.bind[0] = rotate_left,
-        .rotate_left.sdl_name = rotate_left};
-
-    if (!get_settings(&move))
+    title_font = TTF_OpenFont(FONT, TITLE_SIZE);
+    data_font = TTF_OpenFont(FONT, TEXT_SIZE);
+    if (!title_font || !data_font)
     {
-        fprintf(stderr, "Failed to open config file", SDL_GetError());
-        TTF_CloseFont(title_font);
-        TTF_CloseFont(data_font);
-        return -1;
+        fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
+        goto cleanup;
     }
 
-    TIconText binds[BINDS_NUM];
-    binds[0].text = move.move_down;
-    binds[0].icon_path = ARROW_DOWN;
-    binds[1].text = move.move_left;
-    binds[1].icon_path = ARROW_LEFT;
-    binds[2].text = move.move_right;
-    binds[2].icon_path = ARROW_RIGHT;
-    binds[3].text = move.move_hold;
-    binds[3].icon_path = HOLD;
-    binds[4].text = move.rotate_left;
-    binds[4].icon_path = ROTATE_CC;
-    binds[5].text = move.rotate_right;
-    binds[5].icon_path = ROTATE_CW;
-
+    TKeyMap keymap;
+    if (!keymap_load(&keymap, CFG_FILE))
+    {
+        fprintf(stderr, "Could not read %s, using default keys\n", CFG_FILE);
+    }
+    pause_icon = load_icon(renderer, PAUSE);
+    play_icon = load_icon(renderer, PLAY);
     for (int i = 0; i < BINDS_NUM; i++)
     {
-        printf("%s, %s\n", binds[i].text.bind, binds[i].icon_path);
+        binds[i].name = action_name(bind_rows[i].action);
+        snprintf(binds[i].key_name, sizeof(binds[i].key_name), "%s", SDL_GetKeyName(keymap.keys[bind_rows[i].action]));
+        binds[i].icon = load_icon(renderer, bind_rows[i].icon_path);
     }
 
-    // Object init
-    object = object_array[random_object];
-    // next = object_I;
-    next = object_array[random_next];
-    hold = empty_object;
-    // int held_matrice[OBJECT_MATRICE_SIZE][OBJECT_MATRICE_SIZE];
-    // memcpy(held_matrice, object.matrice, sizeof(object.matrice));
+    // Different seed on every start, also for restarts within the same second
+    TGame game;
+    game_init(&game, (unsigned int)(SDL_GetPerformanceCounter() ^ (Uint64)time(NULL)));
 
-    SDL_Point new_pos = {
-        // Next position variable (used as temp position variable)
-        .x = rand_x_position,
-        .y = 1,
-    };
-
-    enum direction new_rotation = object.rotation; // Next rotation variable (used in rotation as temp rotation variable)
-
-    object.pos = new_pos; // Default object position
-
-    int gravity_delay_ms = 800;
-    int delay = 48;
+    enum
+    {
+        PLAYING,
+        PAUSED,
+        OVER
+    } state = PLAYING;
+    bool score_saved = false;
+    SDL_FRect resume_button_pos = {0}; // button rects of the last drawn frame, used for clicks
+    SDL_FRect main_button_pos = {0};
+    SDL_FRect restart_button_pos = {0};
     Uint32 last_gravity_tick = SDL_GetTicks();
-    Uint32 current_tick = SDL_GetTicks();
-
-    int move_y_failed = 0;
-    bool held_current_object = false;
-    int lines = 0;
-    int score = 0;
-    int level = 0;
-    int level_cleared_lines = 0;
-    int cleared_lines = 0;
-
-    bool paused = false;
+    SDL_Event e;
+    bool running = true;
 
     while (running)
     {
         while (SDL_PollEvent(&e))
         {
-            switch (e.type)
+            if (e.type == SDL_QUIT)
             {
-            case SDL_QUIT:
+                next_screen = SCREEN_QUIT;
                 running = false;
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                if (e.button.x >= cog_img_box.x && e.button.x <= (cog_img_box.x + cog_img_box.w) && e.button.y >= cog_img_box.y && e.button.y <= (cog_img_box.y + cog_img_box.h))
+            }
+            else if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT)
+            {
+                const float x = e.button.x;
+                const float y = e.button.y;
+                if (state != OVER && point_in_rect(x, y, cog_img_box))
                 {
-                    paused = true;
-                    printf("paused\n");
-                    continue;
+                    state = state == PAUSED ? PLAYING : PAUSED;
+                    last_gravity_tick = SDL_GetTicks(); // time spent paused does not count
                 }
-                break;
-            case SDL_KEYDOWN:
-                printf("%c\t%d\n", e.key.keysym.sym, e.key.keysym.sym);
-                if ((int)e.key.keysym.sym == SDLK_ESCAPE)
-                { // pause
-                    paused = true;
-                    printf("PAUSED\n");
-                    continue;
-                }
-                if (e.key.keysym.sym == move.move_down.sdl_name)
+                else if (state == PAUSED && point_in_rect(x, y, resume_button_pos))
                 {
-
-                    printf("Down\n");
-                    new_pos.y += 1;
-                    if (!try_move_object(&object, game_field, new_pos))
-                    {
-                        if (move_y_failed >= 1)
-                        {
-                            // Solidify current object
-                            solidify(object, game_field);
-                            cleared_lines = remove_full_rows(game_field);
-                            lines += cleared_lines;
-                            level_cleared_lines += cleared_lines;
-                            if (level_cleared_lines > 10)
-                            {
-                                if (level < 9)
-                                {
-                                    delay -= 5;
-                                }
-                                if (level > 18)
-                                {
-                                    delay = 1;
-                                }
-                                level++;
-                                gravity_delay_ms = delay / 60 * 1000;
-                                level_cleared_lines = 0;
-
-                                // Update Level
-                                sprintf(level_str, "%d", level);
-                                data_texts[0].data = level_str;
-                            }
-
-                            // Original BPS scoring system -- edit - cannot be used (would have to add stages) - use Original Nintendo scoring system
-                            switch (cleared_lines)
-                            {
-                            case 1:
-                                score += 40 * (level + 1);
-                                break;
-                            case 2:
-                                score += 100 * (level + 1);
-                                break;
-                            case 3:
-                                score += 300 * (level + 1);
-                                break;
-                            case 4:
-                                score += 1200 * (level + 1);
-                                break;
-                            }
-
-                            // Update Score
-                            sprintf(score_str, "%d", score);
-                            data_texts[1].data = score_str;
-
-                            // Update Lines
-                            sprintf(lines_str, "%d", lines);
-                            data_texts[2].data = lines_str;
-
-                            // reset variables
-                            held_current_object = false;
-                            move_y_failed = 0;
-                            rand_x_position = SDL_rand(6) + 1;
-                            random_next = SDL_rand(6);
-
-                            // Set next as current
-                            object = next;
-
-                            // Set object's rotation
-                            object.rotation = UP;
-                            new_rotation = object.rotation;
-
-                            // Set current object's position
-                            new_pos.x = rand_x_position;
-                            new_pos.y = 1;
-                            object.pos = new_pos;
-
-                            // Set new next object
-                            next = object_array[random_next];
-
-                            if (object_collision_detection(object, game_field))
-                            {
-                                game_over = true;
-                                running = 0;
-                            }
-                        }
-                        else
-                        {
-                            move_y_failed++;
-                            new_pos = object.pos;
-                        }
-                    }
-                    else
-                    {
-                        object.pos = new_pos;
-                    }
-                    continue;
+                    state = PLAYING;
+                    last_gravity_tick = SDL_GetTicks();
                 }
-                if (e.key.keysym.sym == move.move_left.sdl_name)
+                else if (state != PLAYING && point_in_rect(x, y, main_button_pos))
                 {
-
-                    printf("Left\n");
-                    new_pos.x -= 1;
-                    if (!try_move_object(&object, game_field, new_pos))
-                    {
-                        new_pos = object.pos;
-                    }
-                    else
-                    {
-                        object.pos = new_pos;
-                    }
-                    continue;
+                    next_screen = MENU;
+                    running = false;
                 }
-                if (e.key.keysym.sym == move.move_right.sdl_name)
+                else if (state != PLAYING && point_in_rect(x, y, restart_button_pos))
                 {
-
-                    printf("Right\n");
-                    new_pos.x += 1;
-                    if (!try_move_object(&object, game_field, new_pos))
-                    {
-                        new_pos = object.pos;
-                    }
-                    else
-                    {
-                        object.pos = new_pos;
-                    }
-                    continue;
+                    next_screen = GAME;
+                    running = false;
                 }
-                if (e.key.keysym.sym == move.move_hold.sdl_name)
+            }
+            else if (e.type == SDL_KEYDOWN)
+            {
+                const SDL_Keycode key = e.key.keysym.sym;
+                if (key == SDLK_ESCAPE)
                 {
-
-                    if (!held_current_object)
+                    if (state != OVER)
                     {
-                        if (hold.h == 0 && hold.w == 0)
-                        {
-                            hold = object;
-                            object = next;
-                            random_next = SDL_rand(6);
-                        }
-                        else
-                        {
-                            next = object;
-                            object = hold;
-                            hold = next;
-                        }
-                        hold.pos.x = 0;
-                        hold.pos.y = 0;
-                        rotate_UP(&hold);
-                        hold.rotation = UP;
-                        next = object_array[random_next];
-                        new_pos.x = rand_x_position;
-                        new_pos.y = 1;
-                        object.pos = new_pos;
-                        held_current_object = true;
+                        state = state == PAUSED ? PLAYING : PAUSED;
+                        last_gravity_tick = SDL_GetTicks();
                     }
-                    continue;
                 }
-                if ((char)e.key.keysym.sym == move.rotate_left.sdl_name)
+                else if (state == PLAYING)
                 {
-
-                    printf("RotateL\n");
-                    new_rotation = (object.rotation - 1) % 4;
-                    if (!try_rotate_object(&object, game_field, -1))
+                    switch (keymap_action(&keymap, key))
                     {
-                        new_rotation = object.rotation;
+                    case ACTION_MOVE_DOWN:
+                        game_soft_drop(&game);
+                        break;
+                    case ACTION_MOVE_LEFT:
+                        game_move(&game, -1);
+                        break;
+                    case ACTION_MOVE_RIGHT:
+                        game_move(&game, 1);
+                        break;
+                    case ACTION_MOVE_HOLD:
+                        game_hold(&game);
+                        break;
+                    case ACTION_ROTATE_LEFT:
+                        game_rotate(&game, -1);
+                        break;
+                    case ACTION_ROTATE_RIGHT:
+                        game_rotate(&game, 1);
+                        break;
+                    default:
+                        break;
                     }
-                    else
-                    {
-                        object.rotation = new_rotation;
-                    }
-
-                    continue;
-                }
-                if ((char)e.key.keysym.sym == move.rotate_right.sdl_name)
-                {
-
-                    printf("RotateR\n");
-
-                    new_rotation = (object.rotation + 1) % 4;
-                    if (!try_rotate_object(&object, game_field, 1))
-                    {
-                        new_rotation = object.rotation;
-                    }
-                    else
-                    {
-                        object.rotation = new_rotation;
-                    }
-                    continue;
                 }
             }
         }
 
-        current_tick = SDL_GetTicks();
-        if (current_tick - last_gravity_tick >= gravity_delay_ms)
+        if (state == PLAYING)
         {
-            new_pos.y += 1;
-            if (!try_move_object(&object, game_field, new_pos))
+            const Uint32 current_tick = SDL_GetTicks();
+            if (current_tick - last_gravity_tick >= (Uint32)game_gravity_delay_ms(&game))
             {
-                // Let it fail 1 time
-                if (move_y_failed >= 1)
-                {
-                    // Solidify current object
-                    solidify(object, game_field);
-                    cleared_lines = remove_full_rows(game_field);
-                    lines += cleared_lines;
-                    level_cleared_lines += cleared_lines;
-                    if (level_cleared_lines > 10)
-                    {
-                        if (level < 9)
-                        {
-                            delay -= 5;
-                        }
-                        if (level > 18)
-                        {
-                            delay = 1;
-                        }
-                        level++;
-                        gravity_delay_ms = ((float)delay / 60) * 1000;
-                        printf("new delay: %d\n", gravity_delay_ms);
-                        level_cleared_lines = 0;
-
-                        // Update Level
-                        sprintf(level_str, "%d", level);
-                        data_texts[0].data = level_str;
-                    }
-
-                    // Original Nintendo scoring system
-                    switch (cleared_lines)
-                    {
-                    case 1:
-                        score += 40 * (level + 1);
-                        break;
-                    case 2:
-                        score += 100 * (level + 1);
-                        break;
-                    case 3:
-                        score += 300 * (level + 1);
-                        break;
-                    case 4:
-                        score += 1200 * (level + 1);
-                        break;
-                    }
-
-                    // Update Score
-                    sprintf(score_str, "%d", score);
-                    data_texts[1].data = score_str;
-
-                    // Update Lines
-                    sprintf(lines_str, "%d", lines);
-                    data_texts[2].data = lines_str;
-
-                    // reset variables
-                    held_current_object = false;
-                    move_y_failed = 0;
-                    rand_x_position = SDL_rand(6) + 1;
-                    random_next = SDL_rand(6);
-
-                    // Set next as current
-                    object = next;
-
-                    // Set object's rotation
-                    object.rotation = UP;
-                    new_rotation = object.rotation;
-
-                    // Set current object's position
-                    new_pos.x = rand_x_position;
-                    new_pos.y = 1;
-                    object.pos = new_pos;
-
-                    // Set new next object
-                    next = object_array[random_next];
-
-                    if (object_collision_detection(object, game_field))
-                    {
-                        game_over = true;
-                        running = 0;
-                    }
-                }
-                else
-                {
-                    new_pos = object.pos;
-                    move_y_failed++;
-                }
+                game_gravity(&game);
+                last_gravity_tick = current_tick;
             }
-            else
-            {
-                score += 1;
-                object.pos = new_pos;
-                move_y_failed = 0;
-            }
-            last_gravity_tick = current_tick;
         }
+
+        if (game.game_over && state != OVER)
+        {
+            state = OVER;
+        }
+        if (state == OVER && !score_saved)
+        {
+            score_saved = true;
+            if (!scores_record(SCORE_FILE, game.score))
+            {
+                fprintf(stderr, "Could not save the score to %s\n", SCORE_FILE);
+            }
+        }
+
+        // Score and lines text
+        char level_str[WORD_SIZE];
+        char score_str[WORD_SIZE];
+        char lines_str[WORD_SIZE];
+        snprintf(level_str, sizeof(level_str), "%d", game.level);
+        snprintf(score_str, sizeof(score_str), "%d", game.score);
+        snprintf(lines_str, sizeof(lines_str), "%d", game.lines);
+        TDataText data_texts[3] = {
+            {LEVEL_TEXT, level_str},
+            {SCORE_TEXT, score_str},
+            {LINES_TEXT, lines_str}};
+
+        const TObject next_object = object_create(game.next);
+        const TObject held_object = object_create(game.held);
 
         draw_background(renderer, black);
 
-        draw_object_box(renderer, light.secondary, hold_box, hold, HOLD_BOX_TEXT, title_font);     // Hold object box
-        draw_text_box(renderer, title_font, data_font, data_texts, 3, score_box);                  // Score box
-        draw_playing_field(renderer, game_field, game_field_pos);                                  // Game matrice
-        draw_object_matrice(renderer, game_field_pos, object);                                     // Object
-        draw_object_box(renderer, light.secondary, next_box, next, NEXT_BOX_TEXT, title_font);     // Next object box
-        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white); // Binds box
-        if (paused)
+        draw_object_box(renderer, light.secondary, hold_box, game.has_held ? &held_object : NULL, HOLD_BOX_TEXT, title_font); // Hold object box
+        draw_text_box(renderer, title_font, data_font, data_texts, 3, score_box);                                              // Score box
+        draw_playing_field(renderer, game.field, game_field_pos);                                                              // Game matrice
+        draw_object_matrice(renderer, game_field_pos, &game.current);                                                          // Object
+        draw_object_box(renderer, light.secondary, next_box, &next_object, NEXT_BOX_TEXT, title_font);                         // Next object box
+        draw_icon_text_block(renderer, binds_box, binds, BINDS_NUM, title_font, data_font, white);                             // Binds box
+        draw_icon(renderer, cog_img_box, state == PAUSED ? play_icon : pause_icon);                                            // Play / Pause icon
+
+        if (state == PLAYING)
         {
-            draw_icon(renderer, cog_img_box, PLAY); // Play Icon
+            resume_button_pos = main_button_pos = restart_button_pos = (SDL_FRect){0};
         }
         else
         {
-            draw_icon(renderer, cog_img_box, PAUSE); // Pause Icon
-        }
-        // draw_icon(renderer, sound_img_box, VOLUME_ON);                                             // Sound Icon
-        if (game_over || paused)
-        {
-            int clicked = 0;
-            SDL_FRect resume_button_pos = {-1, -1, -1, -1};
-            if (paused)
+            if (state == PAUSED)
             {
                 resume_button_pos = draw_button(renderer, resume_button, orange, white, title_font, RESUME);
-                if (resume_button_pos.h == -1)
-                {
-                    SDL_FRect retry = draw_button(renderer, resume_button, orange, white, title_font, MAIN_MENU); // draw main menu button
-                    if (retry.h == -1)
-                    {
-                        printf("could not draw button\n");
-                        TTF_CloseFont(title_font);
-                        TTF_CloseFont(data_font);
-                        return -1;
-                    }
-                    else
-                    {
-                        resume_button_pos = retry;
-                    }
-                }
             }
             else
             {
+                resume_button_pos = (SDL_FRect){0};
                 draw_text(renderer, game_over_box, GAME_OVER_TEXT, title_font, white, true); // Game Over text
             }
-            SDL_FRect main_button_pos = draw_button(renderer, main_menu_button, blue, white, title_font, MAIN_MENU); // draw main menu button
-            if (main_button_pos.h == -1)
-            {
-                SDL_FRect retry = draw_button(renderer, main_menu_button, blue, white, title_font, MAIN_MENU); // draw main menu button
-                if (retry.h == -1)
-                {
-                    printf("could not draw button\n");
-                    TTF_CloseFont(title_font);
-                    TTF_CloseFont(data_font);
-                    return -1;
-                }
-                else
-                {
-                    main_button_pos = retry;
-                }
-            }
-            SDL_FRect restart_button_pos = draw_button(renderer, restart_button, green, white, title_font, RESTART); // draw restart button
-            if (main_button_pos.h == -1)
-            {
-                SDL_FRect retry = draw_button(renderer, restart_button, green, white, title_font, RESTART); // draw restart button
-                if (retry.h == -1)
-                {
-                    printf("could not draw button\n");
-                    TTF_CloseFont(title_font);
-                    TTF_CloseFont(data_font);
-                    return -1;
-                }
-                else
-                {
-                    restart_button_pos = retry;
-                }
-            }
-
-            SDL_RenderPresent(renderer);
-            while (1) // while the button was not clicked or while there are more events, continue the loop
-            {
-                if (paused && SDL_PollEvent(&e) && e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
-                {
-                    paused = false;
-                    printf("RESUMED\n");
-                    break;
-                }
-                if (SDL_PollEvent(&e) && e.button.button == SDL_BUTTON_LEFT && e.type == SDL_MOUSEBUTTONDOWN)
-                {
-                    if (paused)
-                    {
-                        if (e.button.x >= cog_img_box.x && e.button.x <= (cog_img_box.x + cog_img_box.w) && e.button.y >= cog_img_box.y && e.button.y <= (cog_img_box.y + cog_img_box.h))
-                        {
-                            paused = false;
-                            printf("play\n");
-                            break;
-                        }
-                        if (e.button.x >= resume_button_pos.x && e.button.x <= (resume_button_pos.x + resume_button_pos.w) && e.button.y >= resume_button_pos.y && e.button.y <= (resume_button_pos.y + resume_button_pos.h))
-                        {
-                            paused = false;
-                            printf("play\n");
-                            break;
-                        }
-                    }
-                    // return to main menu
-                    if (e.button.x >= main_button_pos.x && e.button.x <= (main_button_pos.x + main_button_pos.w) && e.button.y >= main_button_pos.y && e.button.y <= (main_button_pos.y + main_button_pos.h))
-                    {
-                        printf("main menu button clicked\n");
-                        TTF_CloseFont(title_font);
-                        TTF_CloseFont(data_font);
-                        return MENU; // return to main menu
-                    }
-                    // restart
-                    if (e.button.x >= restart_button_pos.x && e.button.x <= (restart_button_pos.x + restart_button_pos.w) && e.button.y >= restart_button_pos.y && e.button.y <= (restart_button_pos.y + restart_button_pos.h))
-                    {
-                        printf("restart button clicked\n");
-                        TTF_CloseFont(title_font);
-                        TTF_CloseFont(data_font);
-                        return GAME; // return to main menu
-                    }
-                }
-                if (SDL_PollEvent(&e) && e.type == SDL_QUIT)
-                {
-                    printf("QUIT\n");
-                    TTF_CloseFont(title_font);
-                    TTF_CloseFont(data_font);
-                    return -1;
-                }
-            }
+            main_button_pos = draw_button(renderer, main_menu_button, blue, white, title_font, MAIN_MENU);
+            restart_button_pos = draw_button(renderer, restart_button, green, white, title_font, RESTART);
         }
-        else
-        {
-            SDL_RenderPresent(renderer);
-        }
-    }
-    TTF_CloseFont(title_font);
-    TTF_CloseFont(data_font);
-    if (update_best_scores(score))
-    {
-        printf("score has been updated\n");
-    }
-    else
-    {
-        printf("could not update score\n");
-    }
-};
-
-int update_best_scores(int score)
-{
-    char row[SETTINGS_ROW_SIZE];
-    int scores[BEST_SCORE_NUM], i = 0;
-    bool score_added = false;
-    FILE *f = fopen(SCORE_FILE, "r");
-    if (f)
-    {
-        while (fgets(row, sizeof(row), f))
-        {
-            scores[i] = atoi(strtok(row, "\n"));
-            i++;
-        }
-        fclose(f);
-    }
-    else
-    {
-        printf("file does not exist\n");
-    }
-    f = fopen(SCORE_FILE, "w");
-    if (!f)
-    {
-        printf("could not open file\n");
-        return 0;
-    }
-    if (i > 0)
-    {
-        for (int ii = 0; ii < i && ii < BEST_SCORE_NUM; ii++)
-        {
-            if (scores[ii] > score)
-            {
-                fprintf(f, "%d\n", scores[ii]);
-            }
-            else
-            {
-                if (!score_added)
-                {
-                    fprintf(f, "%d\n", score);
-                    score_added = true;
-                    ii--; // so you could add the current score into the file too
-                }
-                else
-                {
-                    fprintf(f, "%d\n", scores[ii]);
-                }
-            }
-        }
-    }
-    else
-    {
-        fprintf(f, "%d\n", score);
-    }
-    fclose(f);
-    return 1;
-}
-
-void matrice_init(int matrice[FIELD_HEIGHT][FIELD_WIDTH])
-{
-    for (int i = 0; i < FIELD_HEIGHT; i++)
-    {
-        for (int j = 0; j < FIELD_WIDTH; j++)
-        {
-            if (i == 0 || i == FIELD_HEIGHT - 1 || j == 0 || j == FIELD_WIDTH - 1)
-            {
-                matrice[i][j] = 1;
-            }
-            else
-            {
-                matrice[i][j] = 0;
-            }
-        }
-    }
-}
-
-int get_settings(TMovement *binds)
-{
-
-    FILE *f;
-    char row[SETTINGS_ROW_SIZE];
-    char *name, *bind, sdl_bind;
-    char normalized_bind[WORD_SIZE];
-    f = fopen(CFG_FILE, "r");
-    if (!f)
-    {
-        return 0;
-    }
-    while (fgets(row, SETTINGS_ROW_SIZE, f))
-    {
-        memset(normalized_bind, '\0', WORD_SIZE);
-        name = strtok(row, ":");
-        if (!name)
-        {
-            continue;
-        }
-        bind = strtok(NULL, ";");
-        if (!bind)
-        {
-            continue;
-        }
-        strtok(NULL, "\n"); // Skip comments
-
-        for (int i = 0, j = 0; i < (int)strlen(bind); i++, j++)
-        {
-            if (bind[i] == ' ')
-            {
-                j--;
-                continue;
-            }
-            sdl_bind = bind[i];
-            break;
-        }
-        get_normalized_name(sdl_bind, normalized_bind);
-        if (strcmp("move_left", name) == 0)
-        {
-            SDL_strlcpy(binds->move_left.name, name, sizeof(binds->move_left.name));
-            SDL_strlcpy(binds->move_left.bind, normalized_bind, sizeof(normalized_bind));
-            binds->move_left.sdl_name = sdl_bind;
-
-            continue;
-        }
-        if (strcmp("move_right", name) == 0)
-        {
-            SDL_strlcpy(binds->move_right.name, name, sizeof(binds->move_left.name));
-            SDL_strlcpy(binds->move_right.bind, normalized_bind, sizeof(normalized_bind));
-            binds->move_right.sdl_name = sdl_bind;
-            continue;
-        }
-        if (strcmp("move_down", name) == 0)
-        {
-            SDL_strlcpy(binds->move_down.name, name, sizeof(binds->move_left.name));
-            SDL_strlcpy(binds->move_down.bind, normalized_bind, sizeof(normalized_bind));
-            binds->move_down.sdl_name = sdl_bind;
-            continue;
-        }
-        if (strcmp("move_hold", name) == 0)
-        {
-            SDL_strlcpy(binds->move_hold.name, name, sizeof(binds->move_left.name));
-            SDL_strlcpy(binds->move_hold.bind, normalized_bind, sizeof(normalized_bind));
-            binds->move_hold.sdl_name = sdl_bind;
-            continue;
-        }
-        if (strcmp("rotate_right", name) == 0)
-        {
-            SDL_strlcpy(binds->rotate_right.name, name, sizeof(binds->move_left.name));
-            SDL_strlcpy(binds->rotate_right.bind, normalized_bind, sizeof(normalized_bind));
-            binds->rotate_right.sdl_name = sdl_bind;
-            continue;
-        }
-        if (strcmp("rotate_left", name) == 0)
-        {
-            SDL_strlcpy(binds->rotate_left.name, name, sizeof(binds->move_left.name));
-            SDL_strlcpy(binds->rotate_left.bind, normalized_bind, sizeof(normalized_bind));
-            binds->rotate_left.sdl_name = sdl_bind;
-            continue;
-        }
+        SDL_RenderPresent(renderer);
+        SDL_Delay(1); // do not spin the CPU when vsync is not available
     }
 
-    fclose(f);
-    return 1;
-}
-
-void update_settings(char *new_bind, char *movement)
-{
-    FILE *fi = fopen(CFG_FILE, "r");
-    FILE *fo = fopen(TMP_FILE, "w");
-    char row[SETTINGS_ROW_SIZE];
-    char normalized_bind[WORD_SIZE];
-    char *name, *bind, *comments;
-    char sdl_bind;
-    bool updated = false;
-    while (fgets(row, SETTINGS_ROW_SIZE, fi))
+    // Leaving a round early still counts its score
+    if (!score_saved)
     {
-        memset(normalized_bind, '\0', WORD_SIZE);
-        name = strtok(row, ":");
-        if (!name)
-        {
-            continue;
-        }
-        bind = strtok(NULL, ";");
-        if (!bind)
-        {
-            continue;
-        }
-        comments = strtok(NULL, "\n"); // Skip comments
+        scores_record(SCORE_FILE, game.score);
+    }
 
-        for (int i = 0, j = 0; i < (int)strlen(bind); i++, j++)
+cleanup:
+    for (int i = 0; i < BINDS_NUM; i++)
+    {
+        if (binds[i].icon)
         {
-            if (bind[i] == ' ')
-            {
-                j--;
-                continue;
-            }
-            sdl_bind = bind[i];
-            break;
-        }
-
-        if (strcmp(name, movement) == 0)
-        {
-            updated = true;
-            sdl_bind = get_sdl_name(new_bind);
-            printf("update:%c to %s\n", sdl_bind, new_bind);
-            if (comments)
-            {
-                fprintf(fo, "%s: %c; %s\n", movement, sdl_bind, comments);
-                // printf("%s: %c; %s\n", movement, sdl_bind, comments);
-            }
-            else
-            {
-                fprintf(fo, "%s: %c;\n", movement, sdl_bind);
-                // printf("%s: %c;\n", movement, sdl_bind);
-            }
-        }
-        else
-        {
-            if (comments)
-            {
-                fprintf(fo, "%s: %c; %s\n", name, sdl_bind, comments);
-                // printf("%s: %c; %s\n", name, sdl_bind, comments);
-            }
-            else
-            {
-                fprintf(fo, "%s: %c;\n", name, sdl_bind);
-                // printf("%s: %c;\n", name, sdl_bind);
-            }
+            SDL_DestroyTexture(binds[i].icon);
         }
     }
-    if (!updated)
+    if (pause_icon)
     {
-        sdl_bind = get_sdl_name(new_bind);
-        fprintf(fo, "%s: %c;\n", movement, sdl_bind);
+        SDL_DestroyTexture(pause_icon);
     }
-
-    fclose(fi);
-    fclose(fo);
-
-    if (remove(CFG_FILE) != 0)
+    if (play_icon)
     {
-        perror("Error deleting original configuration file");
+        SDL_DestroyTexture(play_icon);
     }
-    if (rename(TMP_FILE, CFG_FILE) != 0)
+    if (title_font)
     {
-        perror("Error renaming temporary file to configuration file");
+        TTF_CloseFont(title_font);
     }
-}
-
-void get_normalized_name(char name, char *normalized_name)
-{
-    if (name == 'P')
+    if (data_font)
     {
-        strcpy(normalized_name, "arrow_left");
-        return;
+        TTF_CloseFont(data_font);
     }
-    if (name == 'O')
-    {
-        strcpy(normalized_name, "arrow_right");
-        return;
-    }
-    if (name == 'R')
-    {
-        strcpy(normalized_name, "arrow_up");
-        return;
-    }
-    if (name == 'Q')
-    {
-        strcpy(normalized_name, "arrow_down");
-        return;
-    }
-    if (name == ' ')
-    {
-        strcpy(normalized_name, "space");
-        return;
-    }
-    sprintf(normalized_name, "%c\0", name);
-}
-
-char get_sdl_name(char *normalized_name)
-{
-    if (strcmp(normalized_name, "arrow_left") == 0)
-    {
-        return 'P';
-    }
-    if (strcmp(normalized_name, "arrow_right") == 0)
-    {
-        return 'O';
-    }
-    if (strcmp(normalized_name, "arrow_up") == 0)
-    {
-        return 'R';
-    }
-    if (strcmp(normalized_name, "arrow_down") == 0)
-    {
-        return 'Q';
-    }
-    if (strcmp(normalized_name, "space") == 0)
-    {
-        return ' ';
-    }
-    return normalized_name[0];
+    return next_screen;
 }
